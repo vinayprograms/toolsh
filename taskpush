@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# Without `eval` the value will have single quotes around it 
+# which creates problems for git later. If you are tinkering,
+# use `bash -xv taskpush` to debug
+eval TASK_PATH=$(cat ~/.taskrc | grep data.location | sed 's/^.*=//g')
+cd "$TASK_PATH" 1>/dev/null
+task "$@"
+git add . 1>/dev/null && git commit -m "updated" 1>/dev/null && git push 1>/dev/null

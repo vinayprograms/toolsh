@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# This is a replacement for `watch`. Watch doesn't preserve color output. 
+# Certain tools like taskwarrior use xterm instead of regular shell colors
+# which will not work with `watch --color`.
+
+# Syntax: loop [-silent] <wait-seconds> <command>
+# Example: loop 2 task # List top pending tasks every 2 seconds
+
+trap "tput cnorm" EXIT
+
+if [[ "$1" == "-silent" ]] ; then
+	SILENT=true
+	shift
+else
+	SILENT=false
+fi
+
+PERIOD="$1"
+shift
+CMD="$*"
+
+clear
+tput civis
+
+while true; do 
+	tput cup 0 0
+	if [[ "$SILENT" == false ]] ; then
+		echo "Looping every $PERIOD sec (CTRL+C to stop). $(DATE)"
+		echo "CMD: $CMD"
+		echo ""
+	fi
+	/bin/bash -c "$CMD"
+	sleep "$PERIOD"
+	tput ed
+done

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+DEADLINE="$1"
+shift
+TASK="$@"
+
+inbox wait:"$DEADLINE" \"$TASK\"

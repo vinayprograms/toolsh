@@ -1,0 +1,19 @@
+#!/bin/bash
+
+webpage_title() {
+	wget -qO- "$*" | grep -oE '<title.*>.*<\/title>' |  hxclean | hxselect -i -c "title"
+}
+
+read_n_review() {
+	link="$1"
+	title=$(webpage_title "$link")
+	descr="\"Read and review: $title\""
+	id=$(task add +rnr "$descr" | sed -n 's/Created task \(.*\)./\1/p')
+	task "$id" annotate "$link"
+}
+
+if [[ "$#" == "0" ]] ; then
+	taskpull list +rnr
+else
+	read_n_review "$@"
+fi

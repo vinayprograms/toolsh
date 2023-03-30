@@ -1,0 +1,41 @@
+#!/bin/bash
+
+###################
+# Converts duration to number of seconds
+###################
+
+duration=0
+
+calcseconds () {
+	val="$1"
+  unit="$2"
+  seconds=0
+
+  # POSIX shell hack to emulate associative arrays
+  unit_to_sec="d=86400\nh=3600\nm=60\ns=1\n"
+  multiplier=`printf $unit_to_sec | grep $unit | cut -d = -f2`
+
+	seconds=$((value*multiplier))
+}
+
+parseduration() {
+  value=""
+  string="$1"
+  for i in $(seq 0 $((${#string}-1))) ; do
+  	if test "${string:$i:1}" -ge 0 2>/dev/null; then
+    	value="${value}${string:$i:1}"
+  	else
+      calcseconds "$value" "${string:$i:1}"
+      duration=$((duration + seconds))
+    	value=""
+    fi
+  done
+}
+
+if test "$1" = "-h" || test "$1" = "--help" ; then
+	echo "Converts input duration string to number of seconds."
+  echo "For example, tosec 2d12h34m18s, converts a duration of 2 days, 12 hours, 34 minutes and 18 seconds into its seconds equivalent - 218,058 seconds"
+else
+  parseduration "$1"
+  echo "$duration"
+fi

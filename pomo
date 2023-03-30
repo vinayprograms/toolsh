@@ -1,0 +1,151 @@
+#!/bin/bash
+
+####################
+# Internal functions used in pomo logic (see next section)
+####################
+
+# --------------------
+# Ensure configuration directory & files are present
+pomo_check() {
+	if test ! -d "$HOME/.local/pomo" ; then
+		mkdir -p "$HOME/.local/pomo"
+	fi
+	if test ! -e "$HOME/.local/pomo/duration" ; then
+		# Default duration = 25 minutes
+		echo "1500" > "$HOME/.local/pomo/duration" 		
+	fi
+	if test ! -e "$HOME/.local/pomo/start" ; then
+		touch "$HOME/.local/pomo/start"
+	fi
+}
+
+# --------------------
+# Calculate remaining time and show it with an icon.
+show() {
+	remaining="$1"
+	h=$(($remaining/3600))
+	m=`test "$h" -gt 0 && echo $(((remaining-(h*3600))/60)) || echo $(($remaining/60))`
+	s=$(($remaining%60))
+	printf "$2 $3%02d:%02d:%02d\n" "$h" "$m" "$s"
+}
+
+# --------------------
+# Set duration of timer
+# $1 custom duration passed to `pomo`
+set_duration() {
+	local custom_duration="$1"
+	local duration=0
+
+	if test -z "$custom_duration" ; then
+		echo "Using default duration of 25m"
+		duration=$(tosec "25m")
+	else
+		duration=$(tosec "$custom_duration")
+	fi
+	echo "$duration" > "$HOME/.local/pomo/duration"
+}
+
+# --------------------
+# Start the timer
+start() {
+	date '+%s' > "$HOME/.local/pomo/start"
+}
+
+# --------------------
+# stop and invalidate timer.
+stop() {
+	echo "" > "$HOME/.local/pomo/start"
+	# Default duration = 25m in seconds.
+	echo "1500" > "$HOME/.local/pomo/duration"	
+}
+
+# --------------------
+# Pause the timer. Remaining time is saved as 'duration' and timer is stopped.
+# $1 = duration
+# $2 = start time
+pause() {
+	local duration="$1"
+	local start="$2"
+
+	now=$((`date '+%s'`))
+	if test "$duration" = "" ; then duration="1500" ; fi
+	end=$(($start+$duration))
+
+	if test "$now" -lt "$end" ; then
+		remaining=$(($end - $now))
+		duration=`tosec $remaining`
+		echo "$remaining" > "$HOME/.local/pomo/duration"
+		echo "" > "$HOME/.local/pomo/start"
+	else # if timer has expired, behavior is same as 'pomo stop'
+		stop
+	fi
+}
+
+####################
+# Pomo logic
+####################
+
+pomo_check
+
+# Initialize pomo
+duration=`cat ~/.local/pomo/duration`
+start=`cat ~/.local/pomo/start`
+
+# NOTE: Used `echo -n <emoji> | hexdump` to get the octets
+#tomato="\xF0\x9F\x8D\x85  "
+#warning="\xe2\x9a\xa0\xef\xb8\x8f"
+
+tomato="REM:"
+warning="WARN:"
+
+case "$1" in
+	# ---- Start pomodoro session ----
+	"start")
+		start
+	;;
+
+	# ---- Stop pomodoro session ----
+	"stop")
+		stop
+	;;
+
+	# ----- Pause pomodoro timer ---
+	"pause")
+		pause "$duration" "$start"
+	;;
+
+	# ---- Modify pomodoro duration ----
+	"duration")
+		set_duration "$2"
+	;;
+
+	# ---- Get remaining time in active timer ----
+	# NOTE: For expired timer, icons are flipped regularly to show a warning
+	*)
+
+		# Do we have an active timer?
+		start=`cat $HOME/.local/pomo/start`
+		if test "$start" = "" ; then 
+			exit
+		fi
+
+		# Calculate remaining time and show it.
+		now=$((`date '+%s'`))
+		duration=`cat $HOME/.local/pomo/duration`
+		if test "$duration" = "" ; then duration="1500" ; fi
+
+		end=$(($start+$duration))
+
+		if test "$now" -lt "$end" ; then
+			remaining=$(($end - $now))
+			show "$remaining" "$tomato" ""
+		else
+			remaining=$(($now - $end))
+			if test $((now%2)) -eq 0 ; then
+				show "$remaining" "$tomato" "-"
+			else
+				show "$remaining" "$warning" "-"
+			fi
+		fi
+	;;
+esac

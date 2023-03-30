@@ -1,0 +1,70 @@
+#!/bin/bash
+
+# $PRJDIR is pulled from gtdrc
+. ~/.gtdrc
+
+main() {
+	if [[ -z "$1" ]] ; then
+		echo "ERROR: The first argument must be a project name under $PRJDIR"
+    exit 1
+	fi
+	
+	prj="$1"
+	shift
+	thot="$@"
+
+	if [[ -z "$EDITOR" ]] ; then
+		pick_editor
+	fi
+
+	check_and_create_directory "$prj"
+	capture_thot "$prj" "$thot"
+}
+
+# Pick editor
+pick_editor() {
+	EDITOROPTIONS=""
+	[ ! -z $(which vim) ] && EDITOROPTIONS="$EDITOROPTIONS vim"
+	[ ! -z $(which emacs) ] && EDITOROPTIONS="$EDITOROPTIONS emacs"
+	[ ! -z $(which nano) ] && EDITOROPTIONS="$EDITOROPTIONS nano"
+  read -p "No editor configured. Pick one - ($EDITOROPTIONS): " EDITOR
+}
+
+# Check if project exists
+check_and_create_directory() {
+	if [[ ! -d "$PRJDIR/$1" ]] ; then
+		read -p "Project directory doesn't exist. Create (Y/n)? " MKPRJDIR
+		if [[ $MKPRJDIR == "Y" ]] ; then
+			echo "Creating $PRJDIR/$1"
+			mkdir "$PRJDIR/$1"
+			[ ! -z $(which git) ] && cd "$PRJDIR/$1" && git init && git branch -m master main
+			touch "$PRJDIR/$1/thots.md"
+			echo "# Thoughts - $1" >> "$PRJDIR/$1/thots.md"
+			echo "" >> "$PRJDIR/$1/thots.md"
+			[ ! -z $(which git) ] && cd "$PRJDIR/$1" && git add . && git commit -m "New project - $1"
+		else
+			echo "Cannot capture your thought! Exiting."
+			exit 1
+		fi
+	fi
+}
+
+capture_thot() {
+	# If thought string not provided => Open editor to add thought
+	if [[ "$2" == "" ]] ; then
+		$EDITOR "$PRJDIR/$1/thots.md"
+	else
+		echo "* $2" >> "$PRJDIR/$1/thots.md"
+	fi
+
+	# If it is a git repo, add and commit.
+	if [ -d "$PRJDIR/$1/.git" ] ; then
+		git -C "$PRJDIR/$1" add .
+		git -C "$PRJDIR/$1" commit -m "New thought in $1"	
+	fi
+}
+
+####################
+# entrypoint
+
+main "$@"

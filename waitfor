@@ -1,0 +1,20 @@
+#!/bin/bash
+
+if [[ "$#" == "0" ]] ; then
+	# show list of waiting tasks
+	echo "Showing list of tasks you are waiting on..."
+	task +waiting
+	exit
+elif [[ "$#" == "1" ]] ; then
+	person="$1"
+	task +waiting owner:"$person"
+	exit
+else
+	person="$1"
+	taskid="$2"
+	taskpull &>/dev/null
+	task "$taskid" modify -in +waiting owner:"$person" due:+1w wait:monday
+	task edit "$taskid"
+	taskpush &>/dev/null
+fi
+

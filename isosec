@@ -1,0 +1,6 @@
+#!/bin/bash
+
+# Prints date + time in ISO format - YYYYDDMMhhmmss
+# Primary use is in `zet` command	
+
+exec date -u +%Y%m%d%H%M%S "$@"

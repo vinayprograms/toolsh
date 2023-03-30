@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# Calculate factorial of a number
+
+if test "$1" = "-h" || test "$1" = "--help" ; then
+	echo "Calculate factorial of a number"
+	echo "Usage: facto <n>"
+	echo "Example: `facto 5` should give you 120."
+	
+	exit
+fi
+
+if [[ "$1" == "0" ]]; then
+	echo "1"
+else
+	result=1
+	for i in $(seq 1 "$1") ; do
+		result=$((result*$i))
+	done
+	echo "$result"
+fi

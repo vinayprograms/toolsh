@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Calculates permutations of N items with each containing R items
+# N = Number of elements in a set
+# R = Number of elements in a subset.
+# Result => Number of ways I can create subsets from the parent, ignoring the order of elements and avoiding element repetitions (i.e., each element can be present only once in the subset).
+
+if test "$1" = "-h" || test "$1" = "--help" ; then
+	echo "Calculates permutation of N and R - the number of subsets containing 'r' elements out of a larger set containing 'n' elements, ignoring the order (i.e., two subsets can have same elements in different order) and avoiding element repetitions (i.e., same element cannot occur twice in a subset)"
+	echo "Usage: perm <n> <r>"
+	echo "Example: 'perm 5 2' should give you 20."
+	
+	exit
+fi
+
+n=`facto "$1"`
+n_minus_r=`facto $(($1-$2))`
+if [[ "$n_minus_r" == "0" ]]; then
+	echo "No permutations possible."
+else
+	echo $((n/n_minus_r))
+fi

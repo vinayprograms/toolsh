@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# Written only for Linux
+unamestr=$(uname)
+if [[ "$(uname)" == 'Linux' ]]; then
+	value=$1
+	max=$(cat /sys/class/backlight/acpi_video0/max_brightness)
+
+	if [[ $# = 0 ]] ; then
+		echo "Provide a brightness value between 0 and $max"
+	else
+		echo "$value" | sudo tee /sys/class/backlight/acpi_video0/brightness
+	fi
+fi

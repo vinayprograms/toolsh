@@ -1,0 +1,47 @@
+#!/bin/bash
+
+#!/bin/bash
+
+# Check if a filename was provided as an argument
+if [ $# -eq 0 ]
+then
+    echo "Please provide the name of the markdown file as an argument."
+    exit 1
+fi
+
+# Read in the markdown file
+filename=$1
+text=$(tail -n +2 $filename)
+
+chunk=""
+title=""
+while IFS= read -r line; do
+	# Check if it is a header
+	if [[ "$line" =~ ^#+ ]]; then
+		echo -e "$chunk"
+		echo "----------"
+		title=${line#\#* }
+		header=${line% $title}
+		echo "HEADER: \"$header\""
+		#echo "TITLE:$title"
+		chunk="$title\n"
+	else
+		#echo "$line"
+		#echo "----------"
+		chunk="$chunk\n$line"
+	fi
+done <<< "$text"
+echo -e "$chunk"
+
+# Use awk to split the text into chunks at subheadings
+#text=$(awk '/^# / {if (NR!=1) {print ""; print "---"}; print; next} {printf "%s", $0}' $filename | sed -e '1s/^# //' | awk '{printf "%s%s", (NR==1 ? "" : "\n"), $0}')
+# | 
+# Loop over the chunks and write each one to a separate file
+#while read -r chunk; do
+#    # Extract the title of the chunk
+#    title=$(echo "$chunk" | head -n 1 | sed -e 's/^# //')
+#    # Remove any characters that can't be used in a filename
+#    filename=$(echo "$title" | tr -cd '[:alnum:]._-')
+#    # Write the chunk to a file
+#    echo "$chunk" | tail -n +2 > "$filename.md"
+#done

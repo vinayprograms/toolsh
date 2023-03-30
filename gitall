@@ -1,0 +1,6 @@
+#!/bin/sh
+
+git pull -q
+git add .
+git -q commit -m "Updated"
+git push -q

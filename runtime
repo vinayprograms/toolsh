@@ -1,0 +1,21 @@
+#!/bin/bash
+
+if [ `uname -s` == "Darwin" ] ; then
+	if [ -z `which gdate` ] ; then
+		echo "program 'gdate' not found on macOS."
+		echo "Please run 'brew install coreutils'"
+		echo
+		exit
+	fi
+	TOOL="gdate"
+else
+	TOOL="date"
+fi
+
+PROG="$@"
+start=`$TOOL +%s.%3N`
+$PROG
+end=`$TOOL +%s.%3N`
+
+runtime=$( echo "$end-$start" | bc -l )
+echo "Runtime: $runtime seconds"

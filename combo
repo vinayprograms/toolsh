@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# Calculates number of unique combinations of N with R elements each
+# N = Number of elements in a set
+# R = Number of elements in a subset.
+# Result => Number of ways I can create subsets from the parent set, considering order (i.e., two subsets cannot have same elements in different order) and avoiding element repetitions (i.e., same element cannot occur twice in a subset).
+
+if test "$1" = "-h" || test "$1" = "--help" ; then
+	echo "Calculates 'combinations' of N and R - the number of subsets containing 'R' elements out of a larger set containing 'N' elements, considering order (i.e., no two sets can have same set of elements in different order) and avoiding element repetitions (i.e., same element cannot occur twice in a subset)"
+	echo "Usage: combo <n> <r>"
+	echo "Example: 'combo 5 2' should give you 10."
+	
+	exit
+fi
+
+permutation=`perm $1 $2`
+r=`facto $2`
+if [[ "$r" == "0" ]]; then
+	echo "Cannot calculate combinations"
+else
+	echo $((permutation/r))
+fi

@@ -1,0 +1,160 @@
+#!/bin/bash
+
+# NOTE: This script requires ZETDIR variable to be set. This is typically done
+#       in ~/.gtdrc. If you don't use this, then please set this variable in 
+#       ~/.bashrc or ~/.bash_profile to your zettelkasten directory.
+
+source "$HOME/.gtdrc"
+
+preflight-checks() {
+	if [[ -z "$ZETDIR" ]]; then
+	    echo "ERROR in repo path. Make sure there are no trailing spaces"
+	    exit 1;
+	elif [[ ! -d "$ZETDIR" ]]; then
+	    echo "ERROR: Repository not present"
+	    exit 1
+	fi
+
+	if [[ -z "$EDITOR" ]]; then
+	    read -p "No editor configured. Pick one - (vim, nano, emacs): " EDITOR
+	fi
+}
+
+newzettel() {
+	timestamp=`exec date -u +%Y%m%d%H%M%S`
+	echo "Creating zettel: $timestamp"
+
+	cd "$ZETDIR"
+
+	if [[ -z "$1" ]]; then
+		read -p "Title: " title
+	fi
+
+	zettelpath="$timestamp"
+	mkdir "$zettelpath"
+	touch "$zettelpath/README.md"
+	printf "# $title\r\n\r\n\r\n" >> "$zettelpath/README.md"
+	$EDITOR "$zettelpath/README.md"
+	title=`head -n1 "$zettelpath/README.md" | sed "s/^# //"`
+	if [ -d "$ZETDIR/.git" ]; then
+		git add "$zettelpath"/"README.md"
+		git commit -m "$title"
+		git push 2>/dev/null
+	fi
+}
+
+search() {
+	local MAGENTA=$(tput setaf 5)
+	local YELLOW=$(tput setaf 3)
+	local NORMAL=$(tput sgr0)
+	local searchstr="$@"
+
+	cd "$ZETDIR"
+	while read -r line; do
+		zetid="${line:0:14}"
+		remaining="${line:25}"
+		IFS=':'; parts=($remaining); unset IFS;
+		linenum="${parts[0]}"
+		offset="$(( 26 + ${#linenum} ))"
+		title="${line:$offset}"
+		echo "${MAGENTA}$zetid${NORMAL}[${YELLOW}$linenum${NORMAL}]: $title"
+	done < <(grep --color -nri "$@" **/*.md)
+}
+
+searchtitle() {
+	local search_pattern="^#.*$@.*"
+	local MAGENTA=$(tput setaf 5)
+	local NORMAL=$(tput sgr0)
+
+	cd "$ZETDIR"
+
+	while read -r line; do
+		zetid="${line:0:14}"
+		title="${line:27}"
+		echo "$MAGENTA$zetid$NORMAL: $title"
+	done < <(grep -ri -e $search_pattern **/*.md)
+	#grep -ri -e $search_pattern **/*.md | while read -r line; do echo "Processing $line"; done	
+}
+
+editzettel() {
+	zettelpath="$ZETDIR/$1/README.md"
+	title=`head -n1 "$zettelpath" | sed "s/^# //"`
+
+	echo "EDITING: $title"
+	"$EDITOR" "$zettelpath"
+	
+	if [ -d "$ZETDIR/.git" ]; then
+		git add "$zettelpath"
+		git commit -m "$title"
+		git push 2>/dev/null
+	fi
+}
+
+listzettels() {
+	cd "$ZETDIR"
+
+	local MAGENTA=$(tput setaf 5)
+	local NORMAL=$(tput sgr0)
+	
+	lines=0
+	for file in **/*.md 
+	do
+		title=`head -n1 "$file" | sed -e "s/^# //"`
+		printf "$MAGENTA${file:0:14}$NORMAL: $title\r\n"
+		lines=$(($lines+1))
+	done
+	echo ""; echo "$lines zettels"
+}
+
+printzettel() {
+	cd "$ZETDIR"
+
+	echo "" # Newline before showing contents
+	tabs 2
+	zettelpath="$1/README.md"
+	cat "$zettelpath"
+	tabs -8
+	echo "" # Newline before dropping back to prompt
+}
+
+main() {
+	if test -z "$ZETDIR" ; then
+		echo "ERROR: No zettelkasten location set." 
+		echo "Please set ZETDIR to absolute path of zettelkasten repository."
+    exit 1
+	fi
+
+	directory="$1"
+	preflight-checks
+
+	# Begin with latest update
+	cd "$ZETDIR"
+	[ -d "$ZETDIR/.git" ] && git pull 1>/dev/null
+	if [[ "$#" == "0" ]]; then # No subcommands => create a new zettel
+		newzettel "$1"
+	else # subcommands
+		subcommand="$1"
+		shift
+		case "$subcommand" in
+			# `?` - Search for specific string across all zettels
+			\?)	shift 2; search "$@" | less --pattern="$@" -iR ;;
+
+			# `t` or `title` - Search for specific string in title of each zettel
+			t\?|title\?) shift 2; searchtitle "$@" | less --pattern="$@" -iR ;;
+
+			# `e` or `edit` - Edit a specific zettel
+			e|edit) editzettel "$1" ;;
+
+			# `ls` or `list` - List all zettels. Shows the zettel ID and its title.
+			ls|list) listzettels | less -R ;;
+
+			# `show` - Dump the entire zettel's content to STDOUT
+			show) printzettel "$1" ;;
+
+			# Catch all
+			*) ;;
+		esac
+	fi
+}
+
+main "$@"
