@@ -1,0 +1,25 @@
+#!/bin/bash
+
+main() {
+	if [[ ! -d "$HOME/.local/boxes" ]]; then
+		echo "No repository of sandboxes found. Creating repo directory"
+		mkdir -p "$HOME/.local/boxes"
+	fi
+	
+	box_name="$1"
+	if [[ ! -d "$HOME/.local/boxes/$box_name" ]]; then
+		echo "[ERROR] Cannot find sandbox specification for '$box_name' in $HOME/.local/boxes/"
+		exit -1
+	fi
+
+	box
+}
+
+box() {
+	source "$HOME/.local/boxes/$box_name/box.sh"
+	start
+	enter
+	stop
+}
+
+main "$@"
