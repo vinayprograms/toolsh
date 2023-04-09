@@ -6,6 +6,48 @@
 
 source "$HOME/.gtdrc"
 
+main() {
+	if test -z "$ZETDIR" ; then
+		echo "ERROR: No zettelkasten location set." 
+		echo "Please set ZETDIR to absolute path of zettelkasten repository."
+    exit 1
+	fi
+
+	preflight-checks
+
+	# Autocompletion
+	[[ ! -z "$COMP_LINE" ]] && _zet
+
+	# Begin with latest update
+	cd "$ZETDIR"
+	[ -d "$ZETDIR/.git" ] && git pull 1>/dev/null
+	if [[ "$#" == "0" ]]; then # No subcommands => create a new zettel
+		newzettel "$1"
+	else # subcommands
+		subcommand="$1"
+		shift
+		case "$subcommand" in
+			# `?` - Search for specific string across all zettels
+			\?)	shift 2; search "$@" | less --pattern="$@" -iR ;;
+
+			# `t` or `title` - Search for specific string in title of each zettel
+			t\?|title\?) shift 2; searchtitle "$@" | less --pattern="$@" -iR ;;
+
+			# `e` or `edit` - Edit a specific zettel
+			e|edit) editzettel "$1" ;;
+
+			# `ls` or `list` - List all zettels. Shows the zettel ID and its title.
+			ls|list) listzettels | less -R ;;
+
+			# `show` - Dump the entire zettel's content to STDOUT
+			show) printzettel "$1" ;;
+
+			# Catch all
+			*) ;;
+		esac
+	fi
+}
+
 preflight-checks() {
 	if [[ -z "$ZETDIR" ]]; then
 	    echo "ERROR in repo path. Make sure there are no trailing spaces"
@@ -117,42 +159,21 @@ printzettel() {
 	echo "" # Newline before dropping back to prompt
 }
 
-main() {
-	if test -z "$ZETDIR" ; then
-		echo "ERROR: No zettelkasten location set." 
-		echo "Please set ZETDIR to absolute path of zettelkasten repository."
-    exit 1
-	fi
-
-	directory="$1"
-	preflight-checks
-
-	# Begin with latest update
-	cd "$ZETDIR"
-	[ -d "$ZETDIR/.git" ] && git pull 1>/dev/null
-	if [[ "$#" == "0" ]]; then # No subcommands => create a new zettel
-		newzettel "$1"
-	else # subcommands
-		subcommand="$1"
-		shift
-		case "$subcommand" in
-			# `?` - Search for specific string across all zettels
-			\?)	shift 2; search "$@" | less --pattern="$@" -iR ;;
-
-			# `t` or `title` - Search for specific string in title of each zettel
-			t\?|title\?) shift 2; searchtitle "$@" | less --pattern="$@" -iR ;;
-
-			# `e` or `edit` - Edit a specific zettel
-			e|edit) editzettel "$1" ;;
-
-			# `ls` or `list` - List all zettels. Shows the zettel ID and its title.
-			ls|list) listzettels | less -R ;;
-
-			# `show` - Dump the entire zettel's content to STDOUT
-			show) printzettel "$1" ;;
-
-			# Catch all
-			*) ;;
+_zet() {
+	COMPREPLY=()
+	IFS=' ' read -r -a COMP_WORDS <<< "$COMP_LINE"
+	OPTIONS=("edit - or 'e' to edit a zettel"  "? - search for text across all zettels" "t? - or 'title?' to search for text across all zettel titles" "ls - or 'list' to list all zettels" "show - to print a zettel")
+	# If no subcommand, then list all subcommands
+  if [[ -z "${COMP_WORDS[1]}" ]]; then
+		printf "%s\n\n" "${OPTIONS[@]}"
+	else
+		case "${COMP_WORDS[1]}" in
+			e|edit)
+				cd "$ZETDIR"
+				for file in "${COMP_WORDS[2]}"**; do
+					printf "${file:0:14}\n"
+				done
+				;;
 		esac
 	fi
 }
