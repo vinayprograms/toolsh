@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Small script to output battery & power status. 
+# Currently supports macOS only.
+
+batt_info=$(pmset -g rawbatt | sed -n 2p | awk -F';' '{print $1, ";", $6}')
+
+IFS=";" read -ra parts <<< "$batt_info"
+
+shopt -s extglob
+power="${parts[0]}"
+power="${power##*( )}"; power="${power%%*( )}"
+
+IFS="=" read -ra time_parts <<< "${parts[1]}";
+time="${time_parts[1]}"
+time="${time##*( )}"; time="${time%%*( )}"
+
+if [[ "$power" == "AC" ]]; then
+	power="🔋"
+else
+	power="🪫"
+fi
+
+echo "$power $time"
