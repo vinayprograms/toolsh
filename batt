@@ -15,10 +15,13 @@ IFS="=" read -ra time_parts <<< "${parts[1]}";
 time="${time_parts[1]}"
 time="${time##*( )}"; time="${time%%*( )}"
 
+# Hack... Newer versions of macOS show "1092:15" initially when switching from AC to battery power.
+if [[ "$time" == "1092:15" ]]; then time="..."; fi
+
 if [[ "$power" == "AC" ]]; then
-	power="🔋"
+	power="⚡️"
 else
-	power="🪫"
+	power="🔋"
 fi
 
-echo "$power $time"
+echo "$power$time"
