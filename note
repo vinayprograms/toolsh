@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source "$HOME/dotfiles/.gtdrc"
+source "$HOME/.local/dotfiles/dotfiles/.gtdrc"
 
 
 main() {
@@ -9,13 +9,15 @@ main() {
 	    exit 1
 	fi
 
-	prjdir="$1"
+	prj="$1"
+  shift 
 
-	check_prjdir "$1"
-	check_notesdir "$1"
+	check_prjdir "$prj"
+	check_notesdir "$prj"
 
-	# Use zettelkasten for capturing notes
-	zet "$PRJDIR/$1/notes"
+	# Use zettelkasten for capturing notes. 
+  # 'note' is same as 'zet' for rest of the command syntax
+	ZETDIR="$PRJDIR/$prj/notes" zet "$@"
 }
 
 # Check if project exists
