@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# Simple script to extract weather information from wttr.in and show it in a single line (with emojis)
+
+# If I want only the important stuff (condition & temperature) in a single line
+if [[ "$1" == "-s" ]]; then
+	# Pull condition, temperature(actual & feels-like) and precipitation from wttr.in,
+	# convert it into a array
+	parts=($(curl -s http://wttr.in/?format="%c+%t(%f)\n"))
+
+	condition="${parts[0]}"
+	temp="${parts[1]}"
+	precipitation=$(curl -s wttr.in | sed -n 7p)
+	echo "$condition $temp"
+else # Show the entire output from wttr.in
+	curl -s wttr.in
+fi

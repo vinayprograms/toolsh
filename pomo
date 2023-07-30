@@ -92,11 +92,11 @@ duration=`cat ~/.local/pomo/duration`
 start=`cat ~/.local/pomo/start`
 
 # NOTE: Used `echo -n <emoji> | hexdump` to get the octets
-#tomato="\xF0\x9F\x8D\x85  "
-#warning="\xe2\x9a\xa0\xef\xb8\x8f"
+tomato="\xF0\x9F\x8D\x85"
+warning="\xe2\x9a\xa0\xef\xb8\x8f"
 
-tomato="REM:"
-warning="WARN:"
+#tomato="REM:"
+#warning="WARN:"
 
 case "$1" in
 	# ---- Start pomodoro session ----
