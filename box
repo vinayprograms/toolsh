@@ -6,6 +6,13 @@ main() {
 		mkdir -p "$HOME/.local/boxes"
 	fi
 	
+	if [[ -z "$1" ]]; then
+		echo "ERROR: Missing box name." 
+		echo "Syntax: box [BOX-NAME]"
+		echo "\$HOME/.local/boxes/ must contain a directory named [BOX-NAME] and a box.sh file in that directory. The shell script must contain 3 functions - 'start', 'enter' and 'stop'"
+		exit -1
+	fi
+
 	box_name="$1"
 	if [[ ! -d "$HOME/.local/boxes/$box_name" ]]; then
 		echo "[ERROR] Cannot find sandbox specification for '$box_name' in $HOME/.local/boxes/"
