@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# Entire script is copied from rwxrob's dotfiles - https://github.com/rwxrob/dot
+
+_have() { type "$1" &>/dev/null; }
+
+declare OPENAI_API_KEY
+OPENAI_API_KEY="$(head -1 "$HOME/.config/gpt/token")"
+export OPENAI_API_KEY
+
+! _have mods && echo "requires charmbracelet/mods" && exit 1
+
+mods "$@"
