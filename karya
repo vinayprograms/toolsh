@@ -1,0 +1,89 @@
+#!/bin/bash
+
+# NOTE: This script requires KARYA_DIR variable to be set. This is typically done
+#       in ~/.gtdrc. If you don't use this, then please set this variable in 
+#       ~/.bashrc or ~/.bash_profile to your zettelkasten directory.
+if [[ -z "$KARYA_DIR" ]]; then
+  source "$HOME/.gtdrc"
+fi
+
+main() {
+	# Autocompletion
+	# [[ ! -z "$COMP_LINE" ]] && _zet
+
+	# 
+	if [[ "$#" == "0" ]]; then # No subcommands => create a new zettel
+		echo "Please use one of the subcommands - ?, ls, open, edit"
+	else # subcommands
+		subcommand="$1"
+		shift
+		case "$subcommand" in
+			# `?` - Search for specific string across all tasks
+#			\?)	shift 2; search "$@" | less --pattern="$@" -iR ;;
+
+			# `ls` or `list` - List all tasks grouped by project
+			ls|list) list ;; #| less -R ;;
+
+			# `open` - Open the specific project to perform additional operations.
+#			o|open) open "$1" ;;
+
+			# `e` or `edit` - Open markdown file in an editor
+#			e|edit) edit "$1" ;;
+
+			# Catch all
+			*) ;;
+		esac
+	fi
+}
+
+list() {
+	local PRJ_COLOR=$(tput setaf 11)
+	local KEYWORD_COLOR=$(tput setaf 12)
+	local TASK_COLOR=$(tput setaf 15)
+	local ATTRIB_COLOR=$(tput setaf 5)
+	local NORMAL=$(tput sgr0)
+	
+	find "$KARYA_DIR" -type f -name "*.md" -o -name "*.txt" | while read -r file; do
+		output=$(grep -E '^[A-Z]+: .+( #[^ ]+)?( @[^ ]+)?( >> [^ ]+)?$' "$file")
+		if [[ ! -z "$output" ]]; then
+			project_name=$(basename $(dirname "$file"))
+			echo "$PRJ_COLOR[$project_name]$NORMAL "
+			echo "$output" | while IFS= read -r line; do
+				tag=""
+				date=""
+				assignee=""
+				task_title=""
+				keyword=""
+
+				keyword=${line%%:*}
+
+				task_title_atttribs=${line#*\: }
+				task_title=${task_title_atttribs%% #*}
+				task_title=${task_title%% @*}
+				task_title=${task_title%% >>*}
+				
+				for word in $line; do
+					case $word in
+						\#*) tag=${word#\#} ;;
+						\@*) date=${word#\@} ;;
+					esac
+				done
+				if [[ $line == *">>"* ]]; then
+					assignee=${line#*">>"}
+					assignee=$(echo $assignee | awk '{print $1}')
+				fi
+
+				printf "\t$KEYWORD_COLOR$keyword$NORMAL "
+				printf "$TASK_COLOR$task_title$NORMAL\r\n"
+				printf "\t\t$ATTRIB_COLOR"
+				[[ -n "$tag" ]] && printf "tag: $tag"
+				[[ -n "$date" ]] && printf "  due: $date"
+				[[ -n "$assignee" ]] && printf "  assignee: $assignee"
+				printf "$NORMAL\r\n"
+			done
+			echo ""
+		fi
+	done
+}
+
+main "$@"
