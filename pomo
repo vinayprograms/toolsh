@@ -60,6 +60,15 @@ stop() {
 }
 
 # --------------------
+# Start a "break" timer of 5 mins. 
+break() {
+	echo "" > "$HOME/.local/pomo/start"
+	# Break duration = 5m in seconds 
+	echo "300" > "$HOME/.local/pomo/duration"
+	start
+}
+
+# --------------------
 # Pause the timer. Remaining time is saved as 'duration' and timer is stopped.
 # $1 = duration
 # $2 = start time
@@ -107,6 +116,11 @@ case "$1" in
 	# ---- Stop pomodoro session ----
 	"stop")
 		stop
+	;;
+
+	# ---- Start pomodoro session ----
+	"break")
+		break
 	;;
 
 	# ----- Pause pomodoro timer ---
