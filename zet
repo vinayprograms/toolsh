@@ -3,8 +3,9 @@
 # NOTE: This script requires ZETDIR variable to be set. This is typically done
 #       in ~/.gtdrc. If you don't use this, then please set this variable in 
 #       ~/.bashrc or ~/.bash_profile to your zettelkasten directory.
+
 if [[ -z "$ZETDIR" ]]; then
-  source "$HOME/.gtdrc"
+	source "$HOME/.gtdrc"
 fi
 
 main() {

@@ -5,6 +5,13 @@ main() {
 		echo "No repository of sandboxes found. Creating repo directory"
 		mkdir -p "$HOME/.local/boxes"
 	fi
+
+	if [[ "$#" == 0 ]]; then
+		echo "No box name given." 
+		echo "Create a <box-name> under \"$HOME/.local/boxes/\"."
+		echo "In it create \`box.sh\` containg 3 functions - \`start\`, \`stop\` and \`enter\`."
+		exit -1
+	fi
 	
 	if [[ -z "$1" ]]; then
 		echo "ERROR: Missing box name." 
