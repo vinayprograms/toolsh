@@ -32,6 +32,10 @@ main() {
 			# `?` - Search for specific string across all zettels
 			\?)	shift 2; search "$@" | less --pattern="$@" -iR ;;
 
+			# `d` or `todo` - Look for checklist items ("- [ ]") across all zettels
+    	d|todo)	shift 2; search "\- \[ \]" | less --pattern="\- \[ \]" -iR ;;
+
+
 			# `t` or `title` - Search for specific string in title of each zettel
 			t\?|title\?) shift 2; searchtitle "$@" | less --pattern="$@" -iR ;;
 
