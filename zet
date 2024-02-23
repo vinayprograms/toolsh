@@ -33,7 +33,7 @@ main() {
 			\?)	shift 2; search "$@" | less --pattern="$@" -iR ;;
 
 			# `d` or `todo` - Look for checklist items ("- [ ]") across all zettels
-			d|todo) shift 2; search "\- \[ \]" | sed 's/\r$//g' | fzf --tac --ansi --preview-window=up:60%:wrap --preview 'echo {} | cut -d"[" -f1 | xargs -I {} bat --theme=gruvbox-dark --style=numbers,changes --color=always {}/README.md' --bind 'ctrl-e:execute(echo {} | cut -d"[" -f1 | xargs -I {} vim {}/README.md)' ;;
+			d|todo) shift 2; search "\- \[ \]" | sed 's/\r$//g' | fzf --tac --ansi --preview-window=up:60%:wrap --preview 'echo {} | cut -d"[" -f1 | xargs -I {} bat --theme=gruvbox-dark --style=numbers,changes --color=always {}/README.md' --bind 'enter:execute(echo {} | cut -d"[" -f1 | xargs -I {} vim {}/README.md)' ;;
 
 			# `t` or `title` - Search for specific string in title of each zettel
 			t\?|title\?) shift 2; searchtitle "$@" | less --pattern="$@" -iR ;;
@@ -44,7 +44,7 @@ main() {
 			# `ls` or `list` - List all zettels. Shows the zettel ID and its title.
 			#ls|list) listzettels | less -R ;;
 			ls|list) 
-				listzettels | sed 's/\r$//g' | fzf --tac --ansi --preview-window=up:60%:wrap --preview 'bat --theme=gruvbox-dark --style=numbers,changes --color=always {1}/README.md' --bind 'ctrl-e:execute(vim {1}/README.md)' ;;
+				listzettels | sed 's/\r$//g' | fzf --tac --ansi --preview-window=up:60%:wrap --preview 'bat --theme=gruvbox-dark --style=numbers,changes --color=always {1}/README.md' --bind 'enter:execute(vim {1}/README.md)' ;;
 
 			# `show` - Dump the entire zettel's content to STDOUT
 			show) printzettel "$1" ;;
