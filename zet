@@ -94,7 +94,7 @@ newzettel() {
 }
 
 search() {
-	local MAGENTA, YELLOW, NORMAL
+	local MAGENTA YELLOW NORMAL
 	MAGENTA=$(tput setaf 5)
 	YELLOW=$(tput setaf 3)
 	NORMAL=$(tput sgr0)
@@ -114,7 +114,7 @@ search() {
 
 searchtitle() {
 	local search_pattern="^#.*$*.*"
-	local MAGENTA, NORMAL
+	local MAGENTA NORMAL
   MAGENTA=$(tput setaf 5)
 	NORMAL=$(tput sgr0)
 
@@ -145,7 +145,7 @@ editzettel() {
 listzettels() {
 	cd "$ZETDIR" || exit 1
 
-	local MAGENTA, NORMAL
+	local MAGENTA NORMAL
 	MAGENTA=$(tput setaf 5)
 	NORMAL=$(tput sgr0)
 	
