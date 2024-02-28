@@ -5,6 +5,7 @@
 #       ~/.bashrc or ~/.bash_profile to your zettelkasten directory.
 
 if [[ -z "$ZETDIR" ]]; then
+	# shellcheck disable=SC1091
 	source "$HOME/.gtdrc"
 fi
 
@@ -18,10 +19,10 @@ main() {
 	preflight-checks
 
 	# Autocompletion
-	[[ ! -z "$COMP_LINE" ]] && _zet
+	[[ -n "$COMP_LINE" ]] && _zet
 
 	# Begin with latest update
-	cd "$ZETDIR"
+	cd "$ZETDIR" || exit 1
 	[ -d "$ZETDIR/.git" ] && git pull 1>/dev/null
 	if [[ "$#" == "0" ]]; then # No subcommands => create a new zettel
 		newzettel "$1"
@@ -30,13 +31,13 @@ main() {
 		shift
 		case "$subcommand" in
 			# `?` - Search for specific string across all zettels
-			\?)	shift 2; search "$@" | less --pattern="$@" -iR ;;
+			\?)	shift 2; search "$@" | less --pattern="$*" -iR ;;
 
 			# `d` or `todo` - Look for checklist items ("- [ ]") across all zettels
 			d|todo) shift 2; search "\- \[ \]" | sed 's/\r$//g' | fzf --tac --ansi --preview-window=up:60%:wrap --preview 'echo {} | cut -d"[" -f1 | xargs -I {} bat --theme=gruvbox-dark --style=numbers,changes --color=always {}/README.md' --bind 'enter:execute(echo {} | cut -d"[" -f1 | xargs -I {} vim {}/README.md)' ;;
 
 			# `t` or `title` - Search for specific string in title of each zettel
-			t\?|title\?) shift 2; searchtitle "$@" | less --pattern="$@" -iR ;;
+			t\?|title\?) shift 2; searchtitle "$@" | less --pattern="$*" -iR ;;
 
 			# `e` or `edit` - Edit a specific zettel
 			e|edit) editzettel "$1" ;;
@@ -65,26 +66,26 @@ preflight-checks() {
 	fi
 
 	if [[ -z "$EDITOR" ]]; then
-	    read -p "No editor configured. Pick one - (vim, nano, emacs): " EDITOR
+	    read -rp "No editor configured. Pick one - (vim, nano, emacs): " EDITOR
 	fi
 }
 
 newzettel() {
-	timestamp=`exec date -u +%Y%m%d%H%M%S`
+	timestamp=$(exec date -u +%Y%m%d%H%M%S)
 	echo "Creating zettel: $timestamp"
 
-	cd "$ZETDIR"
+	cd "$ZETDIR" || exit 1
 
 	if [[ -z "$1" ]]; then
-		read -p "Title: " title
+		read -rp "Title: " title
 	fi
 
 	zettelpath="$timestamp"
 	mkdir "$zettelpath"
 	touch "$zettelpath/README.md"
-	printf "# $title\r\n\r\n\r\n" >> "$zettelpath/README.md"
+	printf "# %s \r\n\r\n\r\n" "$title" >> "$zettelpath/README.md"
 	$EDITOR "$zettelpath/README.md"
-	title=`head -n1 "$zettelpath/README.md" | sed "s/^# //"`
+	title=$(head -n1 "$zettelpath/README.md" | sed "s/^# //")
 	if [ -d "$ZETDIR/.git" ]; then
 		git add "$zettelpath"/"README.md"
 		git commit -m "$title"
@@ -93,41 +94,43 @@ newzettel() {
 }
 
 search() {
-	local MAGENTA=$(tput setaf 5)
-	local YELLOW=$(tput setaf 3)
-	local NORMAL=$(tput sgr0)
-	local searchstr="$@"
+	local MAGENTA, YELLOW, NORMAL
+	MAGENTA=$(tput setaf 5)
+	YELLOW=$(tput setaf 3)
+	NORMAL=$(tput sgr0)
 
-	cd "$ZETDIR"
+	cd "$ZETDIR" || exit 1
 	while read -r line; do
 		zetid="${line:0:14}"
 		remaining="${line:25}"
-		IFS=':'; parts=($remaining); unset IFS;
+		local -a parts
+		IFS=':'; read -r -a parts <<< "$remaining"; unset IFS;
 		linenum="${parts[0]}"
 		offset="$(( 26 + ${#linenum} ))"
 		title="${line:$offset}"
 		echo "${MAGENTA}$zetid${NORMAL}[${YELLOW}$linenum${NORMAL}]: $title"
-	done < <(grep --color -nri "$@" **/*.md)
+	done < <(grep --color -nri "$@" -- **/*.md)
 }
 
 searchtitle() {
-	local search_pattern="^#.*$@.*"
-	local MAGENTA=$(tput setaf 5)
-	local NORMAL=$(tput sgr0)
+	local search_pattern="^#.*$*.*"
+	local MAGENTA, NORMAL
+  MAGENTA=$(tput setaf 5)
+	NORMAL=$(tput sgr0)
 
-	cd "$ZETDIR"
+	cd "$ZETDIR" || exit 1
 
 	while read -r line; do
 		zetid="${line:0:14}"
 		title="${line:27}"
 		echo "$MAGENTA$zetid$NORMAL: $title"
-	done < <(grep -ri -e $search_pattern **/*.md)
+	done < <(grep -ri -e "$search_pattern" -- **/*.md)
 	#grep -ri -e $search_pattern **/*.md | while read -r line; do echo "Processing $line"; done	
 }
 
 editzettel() {
 	zettelpath="$ZETDIR/$1/README.md"
-	title=`head -n1 "$zettelpath" | sed "s/^# //"`
+	title=$(head -n1 "$zettelpath" | sed "s/^# //")
 
 	echo "EDITING: $title"
 	"$EDITOR" "$zettelpath"
@@ -140,23 +143,24 @@ editzettel() {
 }
 
 listzettels() {
-	cd "$ZETDIR"
+	cd "$ZETDIR" || exit 1
 
-	local MAGENTA=$(tput setaf 5)
-	local NORMAL=$(tput sgr0)
+	local MAGENTA, NORMAL
+	MAGENTA=$(tput setaf 5)
+	NORMAL=$(tput sgr0)
 	
 	lines=0
 	for file in **/*.md 
 	do
-		title=`head -n1 "$file" | sed -e "s/^# //"`
-		printf "$MAGENTA${file:0:14}$NORMAL $title\n"
-		lines=$(($lines+1))
+		title=$(head -n1 "$file" | sed -e "s/^# //")
+		printf "%s${file:0:14}%s %s\n" "$MAGENTA" "$NORMAL" "$title"
+		lines=$((lines+1))
 	done
 	#echo ""; echo "$lines zettels"
 }
 
 printzettel() {
-	cd "$ZETDIR"
+	cd "$ZETDIR" || exit 1
 
 	echo "" # Newline before showing contents
 	tabs 2
@@ -176,9 +180,9 @@ _zet() {
 	else
 		case "${COMP_WORDS[1]}" in
 			e|edit)
-				cd "$ZETDIR"
+				cd "$ZETDIR" || exit 1
 				for file in "${COMP_WORDS[2]}"**; do
-					printf "${file:0:14}\n"
+					printf "%s\n" "${file:0:14}"
 				done
 				;;
 		esac
