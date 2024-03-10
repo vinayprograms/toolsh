@@ -51,7 +51,7 @@ main() {
 			;;
 
 			# `ls` or `list` - List all zettels. Shows the zettel ID and its title.
-			ls|list) listzettels | less -R ;;
+			ls|list) listzettels -c | less -R ;;
 
 			# `show` - Dump the entire zettel's content to STDOUT
 			show) printzettel "$1" ;;
@@ -154,7 +154,9 @@ listzettels() {
 	local MAGENTA NORMAL
 	MAGENTA=$(tput setaf 5)
 	NORMAL=$(tput sgr0)
-	
+
+	showcount="$1"
+
 	lines=0
 	for file in **/*.md 
 	do
@@ -162,7 +164,9 @@ listzettels() {
 		printf "%s${file:0:14}%s %s\n" "$MAGENTA" "$NORMAL" "$title"
 		lines=$((lines+1))
 	done
-	#echo ""; echo "$lines zettels"
+	if [[ "$showcount" == "-c" ]] ; then
+		echo ""; echo "$lines zettels"
+	fi
 }
 
 printzettel() {
