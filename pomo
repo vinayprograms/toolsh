@@ -17,15 +17,18 @@ pomo_check() {
 	if test ! -e "$HOME/.local/pomo/start" ; then
 		touch "$HOME/.local/pomo/start"
 	fi
+	if test ! -e "$HOME/.local/pomo/phase" ; then
+		touch "$HOME/.local/pomo/phase"
+	fi
 }
 
 # --------------------
 # Calculate remaining time and show it with an icon.
 show() {
 	remaining="$1"
-	h=$(($remaining/3600))
-	m=`test "$h" -gt 0 && echo $(((remaining-(h*3600))/60)) || echo $(($remaining/60))`
-	s=$(($remaining%60))
+	h=$((remaining/3600))
+	m=$(test "$h" -gt 0 && echo $(((remaining-(h*3600))/60)) || echo $((remaining/60)))
+	s=$((remaining%60))
 	printf "$2 $3%02d:%02d:%02d\n" "$h" "$m" "$s"
 }
 
@@ -61,7 +64,7 @@ stop() {
 
 # --------------------
 # Start a "break" timer of 5 mins. 
-break() {
+pomo_break() {
 	echo "" > "$HOME/.local/pomo/start"
 	# Break duration = 5m in seconds 
 	echo "300" > "$HOME/.local/pomo/duration"
@@ -76,13 +79,13 @@ pause() {
 	local duration="$1"
 	local start="$2"
 
-	now=$((`date '+%s'`))
+	now=$(($(date '+%s')))
 	if test "$duration" = "" ; then duration="1500" ; fi
-	end=$(($start+$duration))
+	end=$((start+duration))
 
 	if test "$now" -lt "$end" ; then
-		remaining=$(($end - $now))
-		duration=`tosec $remaining`
+		remaining=$((end - now))
+		duration=$(tosec "$remaining")
 		echo "$remaining" > "$HOME/.local/pomo/duration"
 		echo "" > "$HOME/.local/pomo/start"
 	else # if timer has expired, behavior is same as 'pomo stop'
@@ -97,19 +100,22 @@ pause() {
 pomo_check
 
 # Initialize pomo
-duration=`cat ~/.local/pomo/duration`
-start=`cat ~/.local/pomo/start`
+duration=$(cat ~/.local/pomo/duration)
+start=$(cat ~/.local/pomo/start)
 
-# NOTE: Used `echo -n <emoji> | hexdump` to get the octets
-tomato="\xF0\x9F\x8D\x85"
-warning="\xe2\x9a\xa0\xef\xb8\x8f"
+# NOTE: Use `echo -n <emoji> | hexdump` to get the octets
+tomato="🍅"
+warning="⚠️"
+break="⏳"
 
 #tomato="REM:"
 #warning="WARN:"
+#break="BRK:"
 
 case "$1" in
 	# ---- Start pomodoro session ----
 	"start")
+		echo "work" > "$HOME/.local/pomo/phase"
 		start
 	;;
 
@@ -120,7 +126,8 @@ case "$1" in
 
 	# ---- Start pomodoro session ----
 	"break")
-		break
+		echo "break" > "$HOME/.local/pomo/phase"
+		pomo_break
 	;;
 
 	# ----- Pause pomodoro timer ---
@@ -138,25 +145,32 @@ case "$1" in
 	*)
 
 		# Do we have an active timer?
-		start=`cat $HOME/.local/pomo/start`
+		start=$(cat "$HOME"/.local/pomo/start)
+		phase=$(cat "$HOME"/.local/pomo/phase)
 		if test "$start" = "" ; then 
 			exit
 		fi
 
 		# Calculate remaining time and show it.
-		now=$((`date '+%s'`))
-		duration=`cat $HOME/.local/pomo/duration`
+		now=$(($(date '+%s')))
+		duration=$(cat "$HOME"/.local/pomo/duration)
 		if test "$duration" = "" ; then duration="1500" ; fi
 
-		end=$(($start+$duration))
+		end=$((start+duration))
+		#echo "$phase"
+		if [[ "$phase" = 'break' ]]; then
+		  icon="$break"
+		else
+		  icon="$tomato"
+		fi
 
 		if test "$now" -lt "$end" ; then
-			remaining=$(($end - $now))
-			show "$remaining" "$tomato" ""
+			remaining=$((end - now))
+			show "$remaining" "$icon" ""
 		else
-			remaining=$(($now - $end))
+			remaining=$((now - end))
 			if test $((now%2)) -eq 0 ; then
-				show "$remaining" "$tomato" "-"
+				show "$remaining" "$icon" "-"
 			else
 				show "$remaining" "$warning" "-"
 			fi
