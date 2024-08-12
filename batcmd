@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# some distros rename `bat` to `batcat`. Hence this wrapper
+[[ -z $(command -v batcat) ]] && bat "$@" || batcat "$@"
