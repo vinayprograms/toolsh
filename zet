@@ -103,18 +103,28 @@ search() {
 	local MAGENTA YELLOW NORMAL
 	MAGENTA=$(tput setaf 5)
 	YELLOW=$(tput setaf 3)
+	BOLD_ORANGE=$(tput bold; tput setaf 3)
 	NORMAL=$(tput sgr0)
 
 	cd "$ZETDIR" || exit 1
+
+	current_title=""
 	while read -r line; do
 		zetid="${line:0:14}"
+		title=$(head -n 1 "${zetid}/README.md")
+		title=$(echo "${title:2}" | sed 's/\r//')
 		remaining="${line:25}"
 		local -a parts
 		IFS=':'; read -r -a parts <<< "$remaining"; unset IFS;
 		linenum="${parts[0]}"
 		offset="$(( 26 + ${#linenum} ))"
-		title="${line:$offset}"
-		echo "${MAGENTA}$zetid${NORMAL}[${YELLOW}$linenum${NORMAL}]: $title"
+		text="${line:$offset}"
+		if [[ "$title" != "$current_title" ]]; then
+			echo -e ""
+			echo "${MAGENTA}$zetid: ${BOLD_ORANGE}$title${NORMAL}"
+		fi
+		echo "[${YELLOW}$linenum${NORMAL}]: $text"
+		current_title="$title"
 	done < <(grep --color -nri "$@" -- **/*.md)
 }
 
