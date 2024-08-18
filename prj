@@ -6,8 +6,7 @@ NC='\033[0m' # No Color
 
 main() {
 	if [[ "$1" == "list" ]] ; then
-		echo -e "${BOLD}Count includes completed tasks${NC}"
-		taskpull status:pending projects 
+		taskpull status:pending projects
 		exit
 	fi
 
@@ -50,10 +49,6 @@ main() {
 				shift
 				TASK="$@"
 				tasksync "$SUBCMD" \"$TASK\" project:"$PROJECT"
-				;;
-
-			show) # Just keep showing projects list in an infinite loop
-				watch --color -t -n 5 "echo \"{$BOLD}Count includes completed tasks${NC}\"; task projects"
 				;;
 		esac
 	fi

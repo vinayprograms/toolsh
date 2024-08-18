@@ -29,7 +29,9 @@ show() {
 	h=$((remaining/3600))
 	m=$(test "$h" -gt 0 && echo $(((remaining-(h*3600))/60)) || echo $((remaining/60)))
 	s=$((remaining%60))
-	printf "$2 $3%02d:%02d:%02d\n" "$h" "$m" "$s"
+	[[ "$2" == "$warning" ]] && \
+		printf "$2 #[bg=#A00000 fg=white,bright]$3%02d:%02d:%02d#[default]\n" "$h" "$m" "$s" || \
+		printf "$2 $3%02d:%02d:%02d\n" "$h" "$m" "$s"
 }
 
 # --------------------

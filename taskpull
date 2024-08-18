@@ -3,6 +3,7 @@
 # Without `eval` the value will have single quotes around it 
 # which creates problems for git later. If you are tinkering,
 # use `bash -xv taskpull` to debug
-eval TASK_PATH=$(cat "$HOME"/.taskrc | grep data.location | sed 's/^.*=//g')
+eval TASK_PATH=$(cat "$HOME"/.taskrc | grep -E "^data.location" | sed 's/^.*=//g')
+TASK_PATH="${TASK_PATH[0]}"
 git -C "$TASK_PATH" pull --ff-only >/dev/null
 task "$@"
