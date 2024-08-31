@@ -42,7 +42,7 @@ list() {
 	local TASK_COLOR=$(tput setaf 15)
 	local ATTRIB_COLOR=$(tput setaf 5)
 	local NORMAL=$(tput sgr0)
-	
+
 	find "$KARYA_DIR" -type f -name "*.md" -o -name "*.txt" | while read -r file; do
 		output=$(grep -E '^[A-Z]+: .+( #[^ ]+)?( @[^ ]+)?( >> [^ ]+)?$' "$file")
 		if [[ ! -z "$output" ]]; then
@@ -61,7 +61,7 @@ list() {
 				task_title=${task_title_atttribs%% #*}
 				task_title=${task_title%% @*}
 				task_title=${task_title%% >>*}
-				
+
 				for word in $line; do
 					case $word in
 						\#*) tag=${word#\#} ;;

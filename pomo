@@ -29,9 +29,9 @@ show() {
 	h=$((remaining/3600))
 	m=$(test "$h" -gt 0 && echo $(((remaining-(h*3600))/60)) || echo $((remaining/60)))
 	s=$((remaining%60))
-	[[ "$2" == "$warning" ]] && \
-		printf "$2 #[bg=#A00000 fg=white,bright]$3%02d:%02d:%02d#[default]\n" "$h" "$m" "$s" || \
-		printf "$2 $3%02d:%02d:%02d\n" "$h" "$m" "$s"
+	[[ "$2" == "$tomato" ]] && \
+		printf "$2 $3%02d:%02d:%02d\n" "$h" "$m" "$s" || \
+		printf "$2 #[bg=#A00000 fg=white,bright]$3%02d:%02d:%02d#[default]\n" "$h" "$m" "$s"
 }
 
 # --------------------
@@ -107,7 +107,6 @@ start=$(cat ~/.local/pomo/start)
 
 # NOTE: Use `echo -n <emoji> | hexdump` to get the octets
 tomato="🍅"
-warning="⚠️"
 break="⏳"
 
 #tomato="REM:"
@@ -174,7 +173,7 @@ case "$1" in
 			if test $((now%2)) -eq 0 ; then
 				show "$remaining" "$icon" "-"
 			else
-				show "$remaining" "$warning" "-"
+				show "$remaining" "" "-"
 			fi
 		fi
 	;;
