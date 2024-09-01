@@ -1,5 +1,5 @@
 #!/bin/bash
-if ! pgrep Emacs > /dev/null; then 
+if ! pgrep -i Emacs > /dev/null; then 
 	# Emacs UI is not running, start the daemon.
 	emacs --daemon
 fi
