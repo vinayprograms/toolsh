@@ -6,12 +6,12 @@ NC='\033[0m' # No Color
 
 main() {
 	if [[ "$1" == "list" ]] ; then
-		taskpull status:pending projects
+		taskpull status:pending -rnr projects
 		exit
 	fi
 
 	if [[ "$1" == "show" ]] ; then
-		watch --color -t -n 5 "task status:pending projects"
+		watch --color -t -n 5 "task status:pending -rnr projects"
 		exit
 	fi
 
@@ -31,18 +31,22 @@ main() {
 		task waiting project:"$PROJECT"
 	else
 		SUBCMD="$1"
-		TASKID="$2"
+    shift
 
-		case "$SUBCMD" in 
+		case "$SUBCMD" in
 
 			tickle)
+				TASKID="$1"; shift
 				CONTAINS=$(does_prj_contain_task "$PROJECT" "$TASKID")
 				if [[ "$CONTAINS" == "0" ]] ; then
 					echo "Task-ID $TASKID not found in project \"$PROJECT\""
 					exit
 				fi
-	
-				tasksync "$TASKID" modify	wait:monday
+				if [[ "$#" == "0" ]] ; then
+					tasksync "$TASKID" modify wait:monday
+				else
+					tasksync "$TASKID" modify wait:"$@"
+				fi
 				;;
 
 			add)

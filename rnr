@@ -1,5 +1,40 @@
 #!/bin/bash
 
+#  A simple script to add a task to the taskwarrior database to read and review
+#  a webpage.
+#
+# Usage:
+#		rnr https://www.example.com
+#
+#  Uses `wget` to download the webpage, `hxselect` to extract the title of the
+#  webpage, and `task` to add the task to the taskwarrior database with the
+#  title as the description and the link as an annotation. The task is tagged
+#  with `+rnr` tag.
+
+main() {
+	prerequisites_check
+	if [[ "$#" == "0" ]] ; then
+		taskpull list +rnr
+	else
+		read_n_review "$@"
+	fi
+}
+
+prerequisites_check() {
+	if ! command -v task &> /dev/null ; then
+		echo "Taskwarrior is not installed. Please install it first."
+		exit 1
+	fi
+	if ! command -v hxselect &> /dev/null ; then
+		echo "HTML-XML-utils is not installed. Please install it first."
+		exit 1
+	fi
+	if ! command -v hxclean &> /dev/null ; then
+		echo "HTML-XML-utils is not installed. Please install it first."
+		exit 1
+	fi
+}
+
 webpage_title() {
 	wget -qO- "$*" | grep -oE '<title.*>.*<\/title>' |  hxclean | hxselect -i -c "title"
 }
@@ -12,8 +47,4 @@ read_n_review() {
 	task "$id" annotate "$link"
 }
 
-if [[ "$#" == "0" ]] ; then
-	taskpull list +rnr
-else
-	read_n_review "$@"
-fi
+main "$@"

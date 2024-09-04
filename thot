@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # $PRJDIR is pulled from gtdrc
-. ~/.gtdrc
+source "$HOME/.gtdrc"
 
 main() {
 	if [[ -z "$1" ]] ; then

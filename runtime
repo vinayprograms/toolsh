@@ -1,21 +1,49 @@
 #!/bin/bash
 
-if [ `uname -s` == "Darwin" ] ; then
-	if [ -z `which gdate` ] ; then
-		echo "program 'gdate' not found on macOS."
-		echo "Please run 'brew install coreutils'"
-		echo
+# Calculate the time taken by a command to execute.
+# Compared to `time`, this script provides a more concise output. It doesn't 
+# calculate the `sys`, `user` and `real` times separately.
+#
+# Usage: `./runtime <command>`
+# Example: `./runtime sleep 2` should output `Runtime: 2.000 seconds`
+#
+# Note: This script depends on `bc`. In addition, it requires `date` or 
+# `gdate`(if macOS).
+
+main() {
+	prerequisite_checks
+  
+	PROG="$@"
+  start=`$TOOL +%s.%3N`
+  $PROG
+  end=`$TOOL +%s.%3N`
+ 
+	BOLD=$(tput bold)
+	RED=$(tput setaf 1)
+	NORMAL=$(tput sgr0)
+
+  runtime=$( echo "$end-$start" | bc -l )
+  printf "\n${BOLD}${RED}Runtime: $runtime seconds${NORMAL}\n"
+}
+
+prerequisite_checks() {
+	if [ -z `which bc` ] ; then
+		echo "Program 'bc' not found."
 		exit
 	fi
-	TOOL="gdate"
-else
-	TOOL="date"
-fi
+	if [ $(uname -s) == "Darwin" ] ; then
+		if [ -z $(which gdate) ] ; then
+			echo "Program 'gdate' not found. Please install using 'brew install coreutils'"
+			exit
+		fi
+		TOOL="gdate"
+	else
+		if [ -z $(which date) ] ; then
+			echo "Program 'date' not found."
+			exit
+		fi
+		TOOL="date"
+	fi
+}
 
-PROG="$@"
-start=`$TOOL +%s.%3N`
-$PROG
-end=`$TOOL +%s.%3N`
-
-runtime=$( echo "$end-$start" | bc -l )
-echo "Runtime: $runtime seconds"
+main "$@"

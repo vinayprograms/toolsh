@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source "$HOME/.local/dotfiles/.gtdrc"
+source "$HOME/.gtdrc"
 
 main() {
 	if [[ -z "$1" ]] ; then
@@ -9,21 +9,13 @@ main() {
 	fi
 
 	prj="$1"
-<<<<<<< HEAD
 	shift
-=======
-  shift 
->>>>>>> 6e4e26b357ba1ae25718f73d05ebfc56687dfc9c
 
 	check_prjdir "$prj"
 	check_notesdir "$prj"
 
-<<<<<<< HEAD
-	# Use zettelkasten for capturing notes
-=======
 	# Use zettelkasten for capturing notes. 
   # 'note' is same as 'zet' for rest of the command syntax
->>>>>>> 6e4e26b357ba1ae25718f73d05ebfc56687dfc9c
 	ZETDIR="$PRJDIR/$prj/notes" zet "$@"
 }
 
