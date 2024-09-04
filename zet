@@ -56,6 +56,15 @@ main() {
 			# `show` - Dump the entire zettel's content to STDOUT
 			show) printzettel "$1" ;;
 
+			# `last` - Edit the zettel that was worked on most recently
+			last)
+				commit=$(git log --pretty=format:'%h' -n 1)
+				zettel=$(git show --name-only --pretty="" "$commit")
+				zettel=${zettel:0:14}
+				echo "Editing last zettel: $zettel"
+				editzettel "$zettel"
+				;;
+
 			# Catch all
 			*) ;;
 		esac
