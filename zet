@@ -98,7 +98,7 @@ newzettel() {
 	zettelpath="$timestamp"
 	mkdir "$zettelpath"
 	touch "$zettelpath/README.md"
-	printf "# %s \n\n\n" "$title" >> "$zettelpath/README.md"
+	printf "# %s\n\n\n" "$title" >> "$zettelpath/README.md"
 	$EDITOR "$zettelpath/README.md"
 	title=$(head -n1 "$zettelpath/README.md" | sed "s/^# //")
 	if [ -d "$ZETDIR/.git" ]; then
