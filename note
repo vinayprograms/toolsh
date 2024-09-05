@@ -22,7 +22,7 @@ main() {
 # Check if project exists
 check_prjdir() {
 	if [[ ! -d "$PRJDIR/$1" ]] ; then
-		read -p "Project directory doesn't exist. Create [Y/n]? " MKPRJDIR
+		read -p "Project directory - '$PRJDIR/$1', doesn't exist. Create [Y/n]? " MKPRJDIR
 		if [[ "$MKPRJDIR" == "Y" ]] ; then
 			echo "Creating $PRJDIR/$1"
 			mkdir "$PRJDIR/$1"
@@ -37,7 +37,7 @@ check_prjdir() {
 # Check if notes exist
 check_notesdir() {
 	if [[ ! -d "$PRJDIR/$1/notes" ]] ; then
-		read -p "Notes directory doesn't exist. Create (Y/n)? " MKNOTEDIR
+		read -p "Notes directory '$PRJDIR/$1/notes' doesn't exist. Create (Y/n)? " MKNOTEDIR
 		if [[ $MKNOTEDIR == "Y" ]] ; then
 			echo "Creating $PRJDIR/$1/notes"
 			mkdir "$PRJDIR/$1/notes"

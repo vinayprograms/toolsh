@@ -20,7 +20,7 @@ PERIOD="$1"
 shift
 CMD="$*"
 
-clear
+#clear
 tput civis
 
 while true; do 
