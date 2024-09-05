@@ -45,14 +45,13 @@ main() {
 				if [[ "$#" == "0" ]] ; then
 					tasksync "$TASKID" modify wait:monday
 				else
-					tasksync "$TASKID" modify wait:"$@"
+					tasksync "$TASKID" modify wait:"$*"
 				fi
 				;;
 
 			add)
-				shift
-				TASK="$@"
-				tasksync "$SUBCMD" \"$TASK\" project:"$PROJECT"
+				TASK="$*"
+				tasksync "$SUBCMD" "\"$TASK\"" project:"$PROJECT"
 				;;
 		esac
 	fi

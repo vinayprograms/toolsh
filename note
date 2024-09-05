@@ -26,7 +26,6 @@ check_prjdir() {
 		if [[ "$MKPRJDIR" == "Y" ]] ; then
 			echo "Creating $PRJDIR/$1"
 			mkdir "$PRJDIR/$1"
-			git init "$PRJDIR/$1"
 		else
 			echo "Cannot capture notes! Exiting."
 			exit 1
@@ -41,6 +40,7 @@ check_notesdir() {
 		if [[ $MKNOTEDIR == "Y" ]] ; then
 			echo "Creating $PRJDIR/$1/notes"
 			mkdir "$PRJDIR/$1/notes"
+			git init "$PRJDIR/$1/notes"
 		else
 			echo "Cannot capture notes! Exiting."
 			exit 1
