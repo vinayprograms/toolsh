@@ -25,10 +25,13 @@ main() {
 	shift
 	if [[ "$#" == "0" ]] ; then
 		taskpull &>/dev/null
-		echo ""; echo -e "${BOLD} TASKS ${NC}";
+		echo ""; echo -e "${BOLD}    TASKS    ${NC}";
 		task list project:"$PROJECT"
-		echo ""; echo -e "${BOLD} WAITING ${NC}"
+		echo ""; echo -e "${BOLD}   WAITING   ${NC}"
 		task waiting project:"$PROJECT"
+		echo ""; echo -e "${BOLD}   SOMEDAY   ${NC}"
+		task list project:"$PROJECT" +someday
+
 	else
 		SUBCMD="$1"
     shift
