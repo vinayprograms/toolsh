@@ -26,11 +26,11 @@ main() {
 	if [[ "$#" == "0" ]] ; then
 		taskpull &>/dev/null
 		echo ""; echo -e "${BOLD}    TASKS    ${NC}";
-		task list project:"$PROJECT"
+		task list project:"$PROJECT" -rnr
 		echo ""; echo -e "${BOLD}   WAITING   ${NC}"
-		task waiting project:"$PROJECT"
+		task waiting project:"$PROJECT" -rnr
 		echo ""; echo -e "${BOLD}   SOMEDAY   ${NC}"
-		task list project:"$PROJECT" +someday
+		task list project:"$PROJECT" +someday -rnr
 
 	else
 		SUBCMD="$1"
