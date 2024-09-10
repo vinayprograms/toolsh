@@ -14,7 +14,12 @@
 main() {
 	prerequisites_check
 	if [[ "$#" == "0" ]] ; then
-		taskpull list +rnr
+		count=$(task count +rnr)
+		if [[ "$count" > 10 ]]; then
+			vit +rnr
+		else
+			taskpull list +rnr
+		fi
 	else
 		read_n_review "$@"
 	fi
@@ -22,17 +27,22 @@ main() {
 
 prerequisites_check() {
 	if ! command -v task &> /dev/null ; then
-		echo "Taskwarrior is not installed. Please install it first."
+		echo "'taskwarrior' is not installed. Please install it first."
 		exit 1
 	fi
 	if ! command -v hxselect &> /dev/null ; then
-		echo "HTML-XML-utils is not installed. Please install it first."
+		echo "'HTML-XML-utils' is not installed. Please install it first."
 		exit 1
 	fi
 	if ! command -v hxclean &> /dev/null ; then
-		echo "HTML-XML-utils is not installed. Please install it first."
+		echo "'HTML-XML-utils' is not installed. Please install it first."
 		exit 1
 	fi
+	if ! command -v vit &> /dev/null ; then
+		echo "'vit' is not installed. Please install it first."
+		exit 1
+	fi
+
 }
 
 webpage_title() {
