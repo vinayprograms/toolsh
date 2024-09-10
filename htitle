@@ -1,10 +1,7 @@
 #!/bin/bash
 
-# A quick script for use with vim to add a splitter 
-# line with a specific title.
+# A quick script to add a splitter line with a specific title.
 
-# USAGE: In vim, run '.! htitle <title>' on the line 
-# where you want this text.
+# USAGE: In vim, run '.! htitle <title>' on the line where you want this text.
 
-
-echo "# ---------- $@ ----------"
+echo "---------- $@ ----------"
