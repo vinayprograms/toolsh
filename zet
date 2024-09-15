@@ -25,16 +25,19 @@ main() {
 	cd "$ZETDIR" || exit 1
 	[ -d "$ZETDIR/.git" ] && git pull 1>/dev/null
 	if [[ "$#" == "0" ]]; then # No subcommands => create a new zettel
-		newzettel "$1"
+		listzettels | sed 's/\r$//g' | fzf --no-sort --tac --ansi --preview-window=up:60%:wrap --preview 'batcmd --theme=gruvbox-dark --style=changes --color=always {1}/README.md' --bind 'enter:execute(zet e {1})' --bind ctrl-k:preview-up,ctrl-j:preview-down,ctrl-d:preview-page-down,ctrl-u:preview-page-up,ctrl-i:up,ctrl-u:down
 	else # subcommands
 		subcommand="$1"
 		shift
 		case "$subcommand" in
+			# `new` - Create a new zettel
+			n|new) [[ -z "$1" ]] && newzettel || newzettel "$1" ;;
+
 			# `?` - Search for specific string across all zettels
 			\?)	shift 2; search "$@" | less --pattern="$*" -iR ;;
 
 			# `d` or `todo` - Look for checklist items ("- [ ]") across all zettels
-			d|todo) shift 2; search "\- \[ \]" | sed 's/\r$//g' | fzf --no-sort --tac --ansi --preview-window=up:60%:wrap --preview 'echo {} | cut -d"[" -f1 | xargs -I {} batcmd --theme=gruvbox-dark --style=numbers,changes --color=always {}/README.md' --bind 'enter:execute(echo {} | cut -d"[" -f1 | xargs -I {} vim {}/README.md)' --bind ctrl-k:preview-up,ctrl-j:preview-down,ctrl-d:preview-page-down,ctrl-u:preview-page-up,ctrl-m:up,ctrl-n:down;;
+			d|todo) shift 2; search "\- \[ \]" | sed 's/\r$//g' | fzf --no-sort --tac --ansi --preview-window=up:60%:wrap --preview 'echo {} | cut -d"[" -f1 | xargs -I {} batcmd --theme=gruvbox-dark --style=numbers,changes --color=always {}/README.md' --bind 'enter:execute(echo {} | cut -d"[" -f1 | xargs -I {} vim {}/README.md)' --bind ctrl-k:preview-up,ctrl-j:preview-down,ctrl-d:preview-page-down,ctrl-u:preview-page-up,ctrl-i:up,ctrl-u:down;;
 
 			# `t` or `title` - Search for specific string in title of each zettel
 			t\?|title\?) shift 2; searchtitle "$@" | less --pattern="$*" -iR ;;
@@ -44,7 +47,7 @@ main() {
 			# edit.
 			e|edit)
 				if [[ -z "$1" ]]; then
-					listzettels | sed 's/\r$//g' | fzf --no-sort --tac --ansi --preview-window=up:60%:wrap --preview 'batcmd --theme=gruvbox-dark --style=changes --color=always {1}/README.md' --bind 'enter:execute(zet e {1})' --bind ctrl-k:preview-up,ctrl-j:preview-down,ctrl-d:preview-page-down,ctrl-u:preview-page-up,ctrl-m:up,ctrl-n:down
+					listzettels | sed 's/\r$//g' | fzf --no-sort --tac --ansi --preview-window=up:60%:wrap --preview 'batcmd --theme=gruvbox-dark --style=changes --color=always {1}/README.md' --bind 'enter:execute(zet e {1})' --bind ctrl-k:preview-up,ctrl-j:preview-down,ctrl-d:preview-page-down,ctrl-u:preview-page-up,ctrl-i:up,ctrl-u:down
 				else
 					editzettel "$1"
 				fi
@@ -194,20 +197,20 @@ printzettel() {
 	echo "" # Newline before showing contents
 	tabs 2
 	zettelpath="$1/README.md"
-	cat "$zettelpath"
+	batcmd "$zettelpath"
 	tabs -8
 	echo "" # Newline before dropping back to prompt
 }
 
 _zet() {
 	IFS=' ' read -r -a COMP_WORDS <<< "$COMP_LINE"
-	OPTIONS=("edit - or 'e' to edit a zettel"  "? - search for text across all zettels" "t? - or 'title?' to search for text across all zettel titles" "ls - or 'list' to list all zettels" "show - to print a zettel" "last - edit the last committed zettel" "todo - or 'd' to list all todos")
+	OPTIONS=("new - or 'n' to create a new zettel" "edit - or 'e' to edit a zettel"  "? - search for text across all zettels" "t? - or 'title?' to search for text across all zettel titles" "ls - or 'list' to list all zettels" "show - to print a zettel" "last - edit the last committed zettel" "todo - or 'd' to list all todos")
 	# If no subcommand, then list all subcommands
   if [[ -z "${COMP_WORDS[1]}" ]]; then
 		printf "%s\n\n" "${OPTIONS[@]}"
 	else
 		case "${COMP_WORDS[1]}" in
-			e|edit)
+			e|edit|show)
 				cd "$ZETDIR" || exit 1
 				# Count the number of directories that match COMP_WORDS[2]
 				count=$(find . -maxdepth 1 -type d -name "${COMP_WORDS[2]}*" | wc -l)
