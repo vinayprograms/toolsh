@@ -8,4 +8,4 @@
 
 [[ "$#" == 0 ]] && echo "Usage: lorem <num. paragraphs>" && exit
 
-curl http://metaphorpsum.com/paragraphs/"$1"
+curl -sSL "http://metaphorpsum.com/paragraphs/$1"
