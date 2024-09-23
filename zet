@@ -31,7 +31,8 @@ main() {
 		shift
 		case "$subcommand" in
 			# `new` - Create a new zettel
-			n|new) [[ -z "$1" ]] && newzettel || newzettel "$1" ;;
+			n|new) 
+				[[ -z "$1" ]] && newzettel || newzettel "$1" ;;
 
 			# `?` - Search for specific string across all zettels
 			\?)	shift 2; search "$@" | less --pattern="$*" -iR ;;
@@ -67,6 +68,14 @@ main() {
 				echo "Editing last zettel: $zettel"
 				editzettel "$zettel"
 				;;
+			toc)
+				update_readme
+				if [ -d "$ZETDIR/.git" ]; then
+					git add README.md
+					git commit -m "Updated ToC"
+					git push 2>/dev/null
+				fi
+				;;
 
 			# Catch all
 			*) ;;
@@ -88,6 +97,23 @@ preflight-checks() {
 	fi
 }
 
+update_readme() {
+	heading="# My Zettelkasten"
+
+	body=""
+	while read -r directory; do
+		directory="${directory:0:14}"
+		title=$(head -n 1 ./"$directory"/README.md)
+		title="${title:2}"; title="${title%$'\r'}  "
+		body+="| [$directory](./$directory/README.md) |  $title |"$'\n'
+	done < <(ls -d */)
+
+	echo "$heading" > README.md
+	echo "| ID | Zettel |" >> README.md
+	echo "|--|--|" >> README.md
+	echo "$body" >> README.md
+}
+
 newzettel() {
 	timestamp=$(exec date -u +%Y%m%d%H%M%S)
 	echo "Creating zettel: $timestamp"
@@ -103,6 +129,7 @@ newzettel() {
 	touch "$zettelpath/README.md"
 	printf "# %s\n\n\n" "$title" >> "$zettelpath/README.md"
 	$EDITOR "$zettelpath/README.md"
+	update_readme
 	title=$(head -n1 "$zettelpath/README.md" | sed "s/^# //")
 	if [ -d "$ZETDIR/.git" ]; then
 		git add "$zettelpath"/"README.md"
