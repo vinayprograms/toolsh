@@ -1,0 +1,11 @@
+#!/bin/bash
+
+# Copied from rwxrob's dotfiles.
+#
+# Usage: lorem <num. paragraphs>
+#
+# Generate paragraph(s) with random text
+
+[[ "$#" == 0 ]] && echo "Usage: lorem <num. paragraphs>" && exit
+
+curl -sSL "http://metaphorpsum.com/paragraphs/$1"
