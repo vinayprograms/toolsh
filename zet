@@ -30,8 +30,14 @@ main() {
 		subcommand="$1"
 		shift
 		case "$subcommand" in
-			# `new` - Create a new zettel
-			n|new) [[ -z "$1" ]] && newzettel || newzettel "$1" ;;
+			# `new`/`add` - Create a new zettel
+			n|new|a|add) 
+				if [[ -z "$1" ]]; then
+					newzettel
+				else
+					newzettel "$1"
+				fi
+				;;
 
 			# `?` - Search for specific string across all zettels
 			\?)	shift 2; search "$@" | less --pattern="$*" -iR ;;
