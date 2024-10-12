@@ -132,7 +132,7 @@ newzettel() {
 	update_readme
 	title=$(head -n1 "$zettelpath/README.md" | sed "s/^# //")
 	if [ -d "$ZETDIR/.git" ]; then
-		git add "$zettelpath"/"README.md"
+		git add "$zettelpath"/"README.md" README.md
 		git commit -m "$title"
 		git push 2>/dev/null
 	fi
