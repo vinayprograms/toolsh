@@ -2,6 +2,37 @@
 
 # A quick script to add a splitter line with a specific title.
 
-# USAGE: In vim, run '.! htitle <title>' on the line where you want this text.
+# USAGE: In vim, run '.! htitle <symbol-identifier> <title>' on the line where you want this text.
+# Supported symbol identifiers -
+# h - "#"
+# ds - "//"
+# cs - "/* */" - C-style comments
+# dq - " - double quotes (for vim)
+# sc - ";;" - semi-colon (for lisp, elisp/emacs)
 
-echo "---------- $@ ----------"
+if [[ $# < 2 ]]; then
+  echo "ERROR: Expect 2 arguments - <symbol identifier> and <text>"
+  echo
+  echo "Usage: htitle <symbol-identifier> <text>"
+  echo "Supported symbol identifiers"
+  echo "  h  - #        Hash sybmol for shell scripts"
+  echo "  ds - //       Double slash - for C++ style languages"
+  echo "  cs - /* */    For C-style comments"
+  echo "  dq - \"       Double quotes (for vim)"
+  echo "  sc - ;;       Semi-colon (for lisp, elisp/emacs)"
+fi
+
+case "$1" in
+  h)  start_symbol="#"; end_symbol= ;;
+  ds) start_symbol="//"; end_symbol= ;;
+  cs) start_symbol="/*"; end_symbol="*/";;
+  dq) start_symbol="\""; end_symbol= ;;
+  sc) start_symbol=";;"; end_symbol= ;;
+  *) start_symbol=""; end_symbol= ;;
+esac
+
+shift
+
+echo -n "$start_symbol ---------- $@ ----------"
+[[ "$end_symbol" != "" ]] && echo " $end_symbol"
+
