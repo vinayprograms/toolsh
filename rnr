@@ -15,7 +15,7 @@ main() {
 	prerequisites_check
 	if [[ "$#" == "0" ]] ; then
 		count=$(task count +rnr)
-		if [[ "$count" > 10 ]]; then
+		if [[ "$count" -gt 10 ]]; then
 			vit +rnr
 		else
 			taskpull list +rnr

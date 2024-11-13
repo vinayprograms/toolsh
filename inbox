@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ "$#" > 0 ]] ; then
+if [[ "$#" -gt 0 ]] ; then
 	tasksync add "$@" project:INBOX
 else
 	taskpull project:INBOX +PENDING

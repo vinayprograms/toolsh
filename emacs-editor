@@ -4,4 +4,8 @@ if ! pgrep -i Emacs > /dev/null; then
 	emacs --daemon
 fi
 
-emacsclient -nw $@
+if [[ $(uname) =~ "Darwin" ]]; then
+	emacsclient --create-frame $@
+else
+	emacsclient -nw --create-frame $@
+fi

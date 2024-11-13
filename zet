@@ -25,7 +25,7 @@ main() {
 	cd "$ZETDIR" || exit 1
 	[ -d "$ZETDIR/.git" ] && git pull 1>/dev/null
 	if [[ "$#" == "0" ]]; then # No subcommands => create a new zettel
-		listzettels | sed 's/\r$//g' | fzf --no-sort --tac --ansi --preview-window=up:60%:wrap --preview 'batcmd --theme=gruvbox-dark --style=changes --color=always {1}/README.md' --bind 'enter:execute(zet e {1})' --bind ctrl-k:preview-up,ctrl-j:preview-down,ctrl-d:preview-page-down,ctrl-u:preview-page-up,ctrl-i:up,ctrl-u:down
+		listzettels | sed 's/\r$//g' | fzf --no-sort --tac --ansi --preview-window=up:60%:wrap --preview 'batcmd --theme=gruvbox-dark --style=changes --color=always {1}/README.md' --bind 'enter:execute(zet e {1})' --bind ctrl-k:preview-up,ctrl-j:preview-down,ctrl-d:preview-page-down,ctrl-u:preview-page-up,ctrl-l:up,ctrl-h:down
 	else # subcommands
 		subcommand="$1"
 		shift
@@ -43,7 +43,7 @@ main() {
 			\?)	shift 2; search "$@" | less --pattern="$*" -iR ;;
 
 			# `d` or `todo` - Look for checklist items ("- [ ]") across all zettels
-			d|todo) shift 2; search "\- \[ \]" | sed 's/\r$//g' | fzf --no-sort --tac --ansi --preview-window=up:60%:wrap --preview 'echo {} | cut -d"[" -f1 | xargs -I {} batcmd --theme=gruvbox-dark --style=numbers,changes --color=always {}/README.md' --bind 'enter:execute(echo {} | cut -d"[" -f1 | xargs -I {} vim {}/README.md)' --bind ctrl-k:preview-up,ctrl-j:preview-down,ctrl-d:preview-page-down,ctrl-u:preview-page-up,ctrl-i:up,ctrl-u:down;;
+			d|todo) shift 2; search "\- \[ \]" | sed 's/\r$//g' | fzf --no-sort --tac --ansi --preview-window=up:60%:wrap --preview 'echo {} | cut -d"[" -f1 | xargs -I {} batcmd --theme=gruvbox-dark --style=numbers,changes --color=always {}/README.md' --bind 'enter:execute(echo {} | cut -d"[" -f1 | xargs -I {} vim {}/README.md)' --bind ctrl-k:preview-up,ctrl-j:preview-down,ctrl-d:preview-page-down,ctrl-u:preview-page-up,ctrl-l:up,ctrl-h:down;;
 
 			# `t` or `title` - Search for specific string in title of each zettel
 			t\?|title\?) shift 2; searchtitle "$@" | less --pattern="$*" -iR ;;
@@ -53,7 +53,7 @@ main() {
 			# edit.
 			e|edit)
 				if [[ -z "$1" ]]; then
-					listzettels | sed 's/\r$//g' | fzf --no-sort --tac --ansi --preview-window=up:60%:wrap --preview 'batcmd --theme=gruvbox-dark --style=changes --color=always {1}/README.md' --bind 'enter:execute(zet e {1})' --bind ctrl-k:preview-up,ctrl-j:preview-down,ctrl-d:preview-page-down,ctrl-u:preview-page-up,ctrl-i:up,ctrl-u:down
+					listzettels | sed 's/\r$//g' | fzf --no-sort --tac --ansi --preview-window=up:60%:wrap --preview 'batcmd --theme=gruvbox-dark --style=changes --color=always {1}/README.md' --bind 'enter:execute(zet e {1})' --bind ctrl-k:preview-up,ctrl-j:preview-down,ctrl-d:preview-page-down,ctrl-u:preview-page-up,ctrl-l:up,ctrl-h:down
 				else
 					editzettel "$1"
 				fi
@@ -78,7 +78,7 @@ main() {
 				if [ -d "$ZETDIR/.git" ]; then
 					git add README.md
 					git commit -m "Updated ToC"
-					git push 2>/dev/null
+					[[ -n "$(git remote)" ]] && git push 2>/dev/null
 				fi
 				;;
 
@@ -96,7 +96,6 @@ preflight-checks() {
 	    echo "ERROR: Repository not present"
 	    exit 1
 	fi
-
 	if [[ -z "$EDITOR" ]]; then
 	    read -rp "No editor configured. Pick one - (vim, nano, emacs): " EDITOR
 	fi
@@ -139,7 +138,7 @@ newzettel() {
 	if [ -d "$ZETDIR/.git" ]; then
 		git add "$zettelpath"/"README.md"
 		git commit -m "$title"
-		git push 2>/dev/null
+		[[ -n $(git remote) ]] && git push 2>/dev/null
 	fi
 }
 
@@ -198,7 +197,7 @@ editzettel() {
 	if [ -d "$ZETDIR/.git" ]; then
 		git add "$zettelpath"
 		git commit -m "$title"
-		git push 2>/dev/null
+		[[ -n $(git remote) ]] && git push 2>/dev/null
 	fi
 }
 

@@ -1,0 +1,9 @@
+#!/bin/bash
+
+if [[ $# -eq 0 ]]; then
+    echo "Usage: $0 <task_id> <parameters to modify>"
+    exit 1
+fi
+
+taskid="$1"; shift
+tasksync "$taskid" modify "$@"

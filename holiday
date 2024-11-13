@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# Usage:
+# 'holiday' - Use host's locale, no region and current year"
+# 'holiday <year>' - Use host's locale, no region and specific year"
+# 'holiday <locale> <region> <year>' - Use provided params. Nothing is assumed."
+#
+# All information is sourced from https://holidata.net/"
+
+
+case "$#" in
+  0)
+    locale=$(locale | grep "LC_TIME" | cut -d '=' -f 2 | tr '_' '-')
+    locale="${locale:1:5}"
+    region=""
+    year=$(date +"%Y")
+    ;;
+  1)
+    locale=$(locale | grep "LC_TIME" | cut -d '=' -f 2 | tr '_' '-')
+    locale="${locale:1:5}"
+    region=""
+    year="$1"
+    ;;
+  3)
+    locale="$1"; locale=$(echo "$locale" | tr '_' '-')
+    region="$2"
+    year="$3"
+    ;;
+  *)
+    echo "Usage:"
+    echo "'holiday' - Use host's locale, no region and current year"
+    echo "'holiday <year>' - Use host's locale, no region and specific year"
+    echo "'holiday <locale> <region> <year>' - Use provided params. Nothing is assumed."
+    echo
+    echo "All information is sourced from https://holidata.net/"
+    exit
+    ;;
+esac
+
+list=$(curl -sSL "https://holidata.net/${locale}/${year}.csv" | tail -n +2)
+
+while read -r line; do
+  IFS=',' read -r -a values <<< "$line"
+  regn="${values[1]}"
+  dt="${values[2]}"; dt=$(echo "$dt" | tr -d '\"' | tr '-' '_')
+  day="${values[3]}"; day=$(echo "$day" | tr -d '\"')
+  if [[ "$regn" == "\"$region\"" || "$regn" == "\"\"" ]]; then
+    echo "$dt = $day"
+  fi
+done <<< "$list"

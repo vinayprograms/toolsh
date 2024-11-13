@@ -1,0 +1,64 @@
+#!/bin/bash
+
+# $PRJDIR is pulled from gtdrc
+source "$HOME/.gtdrc"
+
+main() {
+	if [[ -z "$1" ]] ; then
+		echo "ERROR: The first argument must be a project name under $PRJDIR"
+    exit 1
+	fi
+	
+	prj="$1"
+	shift
+
+	if [[ -z "$EDITOR" ]] ; then
+		pick_editor
+	fi
+
+	check_and_create_directory "$prj"
+	capture_goal "$prj"
+}
+
+# Pick editor
+pick_editor() {
+	EDITOROPTIONS=""
+	[ -n "$(which vim)" ] && EDITOROPTIONS="$EDITOROPTIONS vim"
+	[ -n "$(which emacs)" ] && EDITOROPTIONS="$EDITOROPTIONS emacs"
+	[ -n "$(which nano)" ] && EDITOROPTIONS="$EDITOROPTIONS nano"
+  read -p "No editor configured. Pick one - ($EDITOROPTIONS): " EDITOR
+}
+
+# Check if project exists
+check_and_create_directory() {
+	if [[ ! -d "$PRJDIR/$1" ]] ; then
+		read -p "Project directory doesn't exist. Create (Y/n)? " MKPRJDIR
+		if [[ $MKPRJDIR == "Y" ]] ; then
+			echo "Creating $PRJDIR/$1"
+			mkdir "$PRJDIR/$1"
+			[ -n "$(which git)" ] && cd "$PRJDIR/$1" && git init && git branch -m master main
+			touch "$PRJDIR/$1/goals.md"
+			echo "# Goals - $1" >> "$PRJDIR/$1/goals.md"
+			echo "" >> "$PRJDIR/$1/goals.md"
+			[ -n "$(which git)" ] && cd "$PRJDIR/$1" && git add . && git commit -m "New project - $1"
+		else
+			echo "Cannot capture your goals! Exiting."
+			exit 1
+		fi
+	fi
+}
+
+capture_goal() {
+	$EDITOR "$PRJDIR/$1/goals.md"
+
+	# If it is a git repo, add and commit.
+	if [ -d "$PRJDIR/$1/.git" ] ; then
+		git -C "$PRJDIR/$1" add .
+		git -C "$PRJDIR/$1" commit -m "New thought in $1"	
+	fi
+}
+
+####################
+# entrypoint
+
+main "$@"
