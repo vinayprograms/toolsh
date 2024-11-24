@@ -4,6 +4,8 @@
 BOLD='\033[1;37;41m'
 NC='\033[0m' # No Color
 
+source "$HOME/.gtdrc"
+
 main() {
 	if [[ "$1" == "list" ]] ; then
 		taskpull status:pending -rnr projects
