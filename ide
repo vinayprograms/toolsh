@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# Pull the projects directory from config
+if [[ -f "$HOME/.gtdrc" ]]; then
+  source "$HOME/.gtdrc"
+else
+  PRJDIR="$HOME/projects"
+fi
+
+if [[ "$#" == 0 ]]; then
+  echo "Missing project name. There should be a directory with that name under $PRJDIR"
+  exit 1
+fi
+
+myproject="$1"
+
+# Start a new tmux session
+tmux new-session -d -s "$myproject"
+
+# tmux session starts in project directory
+tmux send-keys -t "$myproject":1.0 "cd $PRJDIR/$myproject && clear" Enter
+
+# Attach to the session
+tmux attach -t "$myproject"
+
