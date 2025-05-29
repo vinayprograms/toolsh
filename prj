@@ -7,13 +7,15 @@ NC='\033[0m' # No Color
 source "$HOME/.gtdrc"
 
 main() {
+
 	if [[ "$1" == "list" ]] ; then
-		taskpull status:pending -rnr projects
+		#taskpull status:pending -rnr projects
+		list_projects
 		exit
 	fi
 
 	if [[ "$1" == "show" ]] ; then
-		watch --color -t -n 5 "task status:pending -rnr projects"
+		watch --color -t -n 5 "prj list"
 		exit
 	fi
 
@@ -33,7 +35,11 @@ main() {
 		task waiting project:"$PROJECT" -rnr
 		echo ""; echo -e "${BOLD}   SOMEDAY   ${NC}"
 		task list project:"$PROJECT" +someday -rnr
-
+		if [[ "$PROJECT" != "" ]]; then
+			echo ""; echo -e "${BOLD}   NOTES   ${NC}"
+			note_count=$(note "$PROJECT" count)
+			echo -e "$note_count notes. Use 'note $PROJECT ls' to list notes"
+		fi
 	else
 		SUBCMD="$1"
     shift
@@ -60,6 +66,27 @@ main() {
 				;;
 		esac
 	fi
+}
+
+list_projects() {
+	task_data=$(get_projects_and_tasks)
+	echo -e "${BOLD}      PROJECT       │ TASKS │ NOTES ${NC}"
+	while IFS= read -r line; do
+		project_name=$(echo "$line" | sed -E 's/\s+[0-9]+$//')
+		p_name=$(echo "$project_name" | xargs)
+		task_count=$(echo "$line" | awk '{print $NF}')
+		if [[ "$p_name" != "(none)" ]]; then
+			zettel_count=$(note "$p_name" count)
+		else
+			zettel_count="0"
+		fi
+
+		printf "%-20s│ %5s │%5s\n" "$project_name" "$task_count" "$zettel_count"
+	done <<< "$task_data"
+}
+
+get_projects_and_tasks() {
+	taskpull status:pending -rnr projects | tail -n +4 | head -n -2
 }
 
 does_prj_contain_task() {

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # NOTE: This script requires ZETDIR variable to be set. This is typically done
-#       in ~/.gtdrc. If you don't use this, then please set this variable in 
+#       in ~/.gtdrc. If you don't use this, then please set this variable in
 #       ~/.bashrc or ~/.bash_profile to your zettelkasten directory.
 
 if [[ -z "$ZETDIR" ]]; then
@@ -11,9 +11,14 @@ fi
 
 main() {
 	if test -z "$ZETDIR" ; then
-		echo "ERROR: No zettelkasten location set." 
+		echo "ERROR: No zettelkasten location set."
 		echo "Please set ZETDIR to absolute path of zettelkasten repository."
     exit 1
+	fi
+
+	if [[ "$1" == "count" ]]; then
+		[[ -d "$ZETDIR" ]] && find /root/projects/toolsh/notes/* -maxdepth 0 -type d | wc -l || echo "0"
+		exit
 	fi
 
 	preflight-checks
@@ -24,14 +29,18 @@ main() {
 	# Begin with latest update
 	cd "$ZETDIR" || exit 1
 	[[ -d "$ZETDIR/.git" && -n $(cd "$ZETDIR" && git remote) ]] && git pull 1>/dev/null
-	if [[ "$#" == "0" ]]; then # No subcommands => create a new zettel
+	if [[ "$#" == "0" ]]; then # No subcommands => interactive
 		listzettels | sed 's/\r$//g' | fzf --no-sort --tac --ansi --preview-window=up:60%:wrap --preview 'batcmd --theme=gruvbox-dark --style=changes --color=always {1}/README.md' --bind 'enter:execute(zet e {1})' --bind ctrl-k:preview-up,ctrl-j:preview-down,ctrl-d:preview-page-down,ctrl-u:preview-page-up,ctrl-h:up,ctrl-l:down
 	else # subcommands
 		subcommand="$1"
 		shift
 		case "$subcommand" in
+			# Just show the count
+			count)
+			ls -l **/*.md | wc -l
+			;;
 			# `new`/`add` - Create a new zettel
-			n|new|a|add) 
+			n|new|a|add)
 				if [[ -z "$1" ]]; then
 					newzettel
 				else
@@ -184,7 +193,7 @@ searchtitle() {
 		title="${line:27}"
 		echo "$MAGENTA$zetid$NORMAL: $title"
 	done < <(grep -ri -e "$search_pattern" -- **/*.md)
-	#grep -ri -e $search_pattern **/*.md | while read -r line; do echo "Processing $line"; done	
+	#grep -ri -e $search_pattern **/*.md | while read -r line; do echo "Processing $line"; done
 }
 
 editzettel() {
@@ -193,7 +202,7 @@ editzettel() {
 
 	echo "EDITING: $title"
 	"$EDITOR" "$zettelpath"
-	
+
 	if [ -d "$ZETDIR/.git" ]; then
 		git add "$zettelpath"
 		git commit -m "$title"
@@ -203,6 +212,9 @@ editzettel() {
 
 listzettels() {
 	cd "$ZETDIR" || exit 1
+	if [[ "$(find "$ZETDIR"/* -maxdepth 0 -type d | wc -l)" == 0 ]]; then
+		exit -1
+	fi
 
 	local MAGENTA NORMAL
 	MAGENTA=$(tput setaf 5)
@@ -211,7 +223,7 @@ listzettels() {
 	showcount="$1"
 
 	lines=0
-	for file in **/*.md 
+	for file in **/*.md
 	do
 		title=$(head -n1 "$file" | sed -e "s/^# //")
 		printf "%s${file:0:14}%s %s\n" "$MAGENTA" "$NORMAL" "$title"
