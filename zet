@@ -17,7 +17,7 @@ main() {
 	fi
 
 	if [[ "$1" == "count" ]]; then
-		[[ -d "$ZETDIR" ]] && find /root/projects/toolsh/notes/* -maxdepth 0 -type d | wc -l || echo "0"
+		[[ -d "$ZETDIR" ]] && find "$ZETDIR"/* -maxdepth 0 -type d | wc -l | xargs || echo "0"
 		exit
 	fi
 

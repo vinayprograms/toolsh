@@ -72,7 +72,7 @@ list_projects() {
 	task_data=$(get_projects_and_tasks)
 	echo -e "${BOLD}      PROJECT       │ TASKS │ NOTES ${NC}"
 	while IFS= read -r line; do
-		project_name=$(echo "$line" | sed -E 's/\s+[0-9]+$//')
+		project_name=$(echo "$line" | sed -E 's/\s*[0-9]+$//')
 		p_name=$(echo "$project_name" | xargs)
 		task_count=$(echo "$line" | awk '{print $NF}')
 		if [[ "$p_name" != "(none)" ]]; then
@@ -86,7 +86,10 @@ list_projects() {
 }
 
 get_projects_and_tasks() {
-	taskpull status:pending -rnr projects | tail -n +4 | head -n -2
+	list_data=$(taskpull status:pending -rnr projects)
+	list_data=$(echo "$list_data" | tail -n +4)
+	count=$(echo "$list_data" | wc -l)
+	echo "$list_data" | head -n "$(($count - 2))"
 }
 
 does_prj_contain_task() {
