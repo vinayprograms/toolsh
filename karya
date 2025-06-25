@@ -14,7 +14,6 @@ main() {
 	# Autocompletion
 	# [[ ! -z "$COMP_LINE" ]] && _karya
 
-	#
 	if [[ "$#" == "0" ]]; then # No subcommands => create a new zettel
 		echo "Please use one of the subcommands - ?, ls, open, edit"
 	else # subcommands
@@ -25,7 +24,7 @@ main() {
 #			\?)	shift 2; search "$@" | less --pattern="$@" -iR ;;
 
 			# `ls` or `list` - List all tasks grouped by project
-			ls|list) list | fzf --no-sort --tac --ansi --preview-window=up:60%:wrap --bind 'enter:execute(note {1} edit {2})' --bind ctrl-k:preview-up,ctrl-j:preview-down,ctrl-d:preview-page-down,ctrl-u:preview-page-up,ctrl-h:up,ctrl-l:down ;; #less -R ;;
+			ls|list) list | head -n -1 | fzf --no-sort --tac --ansi --preview-window=up:60%:wrap --bind 'enter:execute(note {1} edit {2})' --bind ctrl-k:up,ctrl-j:down,ctrl-d:preview-page-down,ctrl-u:preview-page-up,ctrl-h:up,ctrl-l:down ;; #less -R ;;
 
 			# `open` - Open the specific project to perform additional operations.
 #			o|open) open "$1" ;;
@@ -40,7 +39,8 @@ main() {
 }
 
 list() {
-	find "$KARYA_DIR" -type f -name "*.md" -o -name "*.txt" | while read -r file; do
+	find "$PRJDIR" -path "$PRJDIR/*/notes/[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]/README.md" -type f | while read -r file; do
+	#find "$KARYA_DIR" -type f -name "*.md" -o -name "*.txt" | while read -r file; do
 		process_file "$file"
 	done
 	echo ""
@@ -51,23 +51,29 @@ process_file() {
 	file="$1"
 	output=$(grep -E '^[A-Z]+: .+( #[^ ]+)?( @[^ ]+)?( >> [^ ]+)?$' "$file")
 	if [[ -n "$output" ]]; then
+		local full_path z filename prj
+
 		full_path=$(dirname "$file")
 		# Get host directory (the one holding the zettel)
-		z=$(basename "$full_path")
+		filename="${file##*/}"
 		# Get the project name. That is 2 directories up from `zet_dir`
-		p=$(dirname "$full_path")
-		p=$(basename "$(dirname "$p")")
+		prj=$(dirname "$full_path")
+		prj=$(basename "$(dirname "$prj")")
+		z=$(basename "$full_path")
 		echo "$output" | while IFS= read -r line; do
-			process_line "$line"
+			process_line "$line" "$prj" "$z"
 		done
 	fi
 }
 
 process_line() {
-	local line tag dt assignee title keyword
+	local project zettel line tag dt assignee title keyword
 	local PRJ_COLOR ACTIVE_COLOR COMPLETED_COLOR TASK_COLOR TAG_COLOR DATE_COLOR ASSIGNEE_COLOR NORMAL
 
 	line="$1"
+	project="$2"
+	zettel="$3"
+
 	keyword=${line%%:*}
 	# If keyword is not in the list of valid keywords, skip this entry
 	if [[ ! "${ACTIVE_KEYWORDS[*]}" =~ $keyword && ! "${COMPLETED_KEYWORDS[*]}" =~ $keyword ]]; then
@@ -99,20 +105,19 @@ process_line() {
 	NORMAL=$(tput sgr0)
 
 	# Print the project name and the task
-	printf "%s%s%s" "$PRJ_COLOR" "$p" "$NORMAL"
+	printf "%s%s%s" "$PRJ_COLOR" "$project" "$NORMAL"
 	# Print the zettel directory and the task
-	printf " %s%s%s\t" "$PRJ_COLOR" "$z" "$NORMAL"
+	printf " %s%s%s\t" "$PRJ_COLOR" "$zettel" "$NORMAL"
 	if [[ "${ACTIVE_KEYWORDS[*]}" =~ $keyword ]]; then
 		printf " %s%s%s\t" "$ACTIVE_COLOR" "$keyword" "$NORMAL"
 	else
 		printf " %s%s%s\t" "$COMPLETED_COLOR" "$keyword" "$NORMAL"
 	fi
 	printf " %s%s%s\t" "$TASK_COLOR" "$title" "$NORMAL"
-	printf "\t\t"
 	[[ -n "$tag" ]] && printf " %s %s %s " "$TAG_COLOR" "$tag" "$NORMAL"
 	[[ -n "$dt" ]] && printf " %s %s %s " "$DATE_COLOR" "$dt" "$NORMAL"
 	[[ -n "$assignee" ]] && printf " %s %s %s" "$ASSIGNEE_COLOR" "$assignee" "$NORMAL"
-	printf "\n"
+	printf "\r\n"
 }
 
 main "$@"
