@@ -1,25 +1,16 @@
 #!/bin/bash
 
-#  A simple script to add a task to the taskwarrior database to read and review
-#  a webpage.
+#  A simple script to add a reading link to an existing reading list file.
 #
 # Usage:
 #		rnr https://www.example.com
-#
-#  Uses `wget` to download the webpage, `hxselect` to extract the title of the
-#  webpage, and `task` to add the task to the taskwarrior database with the
-#  title as the description and the link as an annotation. The task is tagged
-#  with `+rnr` tag.
+
+source "$HOME/.gtdrc"
 
 main() {
 	prerequisites_check
 	if [[ "$#" == "0" ]] ; then
-		count=$(task count +rnr)
-		if [[ "$count" -gt 10 ]]; then
-			vit +rnr
-		else
-			taskpull list +rnr
-		fi
+	"$EDITOR" "$PRJDIR/reading-list.md"
 	else
 		read_n_review "$@"
 	fi
@@ -42,7 +33,11 @@ prerequisites_check() {
 		echo "'vit' is not installed. Please install it first."
 		exit 1
 	fi
-
+	if [[ ! -f "$PRJDIR/reading-list.md" ]]; then
+		touch "$PRJDIR/reading-list.md"
+		echo "# Reading List" >> "$PRJDIR/reading-list.md"
+		echo "" >> "$PRJDIR/reading-list.md"
+	fi
 }
 
 webpage_title() {
@@ -52,9 +47,7 @@ webpage_title() {
 read_n_review() {
 	link="$1"
 	title=$(webpage_title "$link")
-	descr="\"Read and review: $title\""
-	id=$(task add +rnr "$descr" | sed -n 's/Created task \(.*\)./\1/p')
-	task "$id" annotate "$link"
+	echo "- [$title]($link)" >> "$PRJDIR/reading-list.md"
 }
 
 main "$@"

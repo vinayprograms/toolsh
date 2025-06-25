@@ -7,11 +7,14 @@ if [[ -z "$KARYA_DIR" ]]; then
   source "$HOME/.gtdrc"
 fi
 
+ACTIVE_KEYWORDS=("TODO" "TASK" "NOTE" "REMINDER" "EVENT" "MEETING" "CALL" "EMAIL" "MESSAGE" "FOLLOWUP" "REVIEW" "CHECKIN" "CHECKOUT" "RESEARCH" "READING" "WRITING" "DRAFT" "EDITING" "FINALIZE" "SUBMIT" "PRESENTATION" "WAITING" "DEFERRED" "DELEGATED")
+COMPLETED_KEYWORDS=("ARCHIVED" "CANCELED" "DELETED" "DONE" "COMPLETED" "CLOSED")
+
 main() {
 	# Autocompletion
-	# [[ ! -z "$COMP_LINE" ]] && _zet
+	# [[ ! -z "$COMP_LINE" ]] && _karya
 
-	# 
+	#
 	if [[ "$#" == "0" ]]; then # No subcommands => create a new zettel
 		echo "Please use one of the subcommands - ?, ls, open, edit"
 	else # subcommands
@@ -22,7 +25,7 @@ main() {
 #			\?)	shift 2; search "$@" | less --pattern="$@" -iR ;;
 
 			# `ls` or `list` - List all tasks grouped by project
-			ls|list) list ;; #| less -R ;;
+			ls|list) list | fzf --no-sort --tac --ansi --preview-window=up:60%:wrap --bind 'enter:execute(note {1} edit {2})' --bind ctrl-k:preview-up,ctrl-j:preview-down,ctrl-d:preview-page-down,ctrl-u:preview-page-up,ctrl-h:up,ctrl-l:down ;; #less -R ;;
 
 			# `open` - Open the specific project to perform additional operations.
 #			o|open) open "$1" ;;
@@ -37,53 +40,79 @@ main() {
 }
 
 list() {
-	local PRJ_COLOR=$(tput setaf 11)
-	local KEYWORD_COLOR=$(tput setaf 12)
-	local TASK_COLOR=$(tput setaf 15)
-	local ATTRIB_COLOR=$(tput setaf 5)
-	local NORMAL=$(tput sgr0)
-
 	find "$KARYA_DIR" -type f -name "*.md" -o -name "*.txt" | while read -r file; do
-		output=$(grep -E '^[A-Z]+: .+( #[^ ]+)?( @[^ ]+)?( >> [^ ]+)?$' "$file")
-		if [[ ! -z "$output" ]]; then
-			project_name=$(basename $(dirname "$file"))
-			echo "$PRJ_COLOR[$project_name]$NORMAL "
-			echo "$output" | while IFS= read -r line; do
-				tag=""
-				date=""
-				assignee=""
-				task_title=""
-				keyword=""
-
-				keyword=${line%%:*}
-
-				task_title_atttribs=${line#*\: }
-				task_title=${task_title_atttribs%% #*}
-				task_title=${task_title%% @*}
-				task_title=${task_title%% >>*}
-
-				for word in $line; do
-					case $word in
-						\#*) tag=${word#\#} ;;
-						\@*) date=${word#\@} ;;
-					esac
-				done
-				if [[ $line == *">>"* ]]; then
-					assignee=${line#*">>"}
-					assignee=$(echo $assignee | awk '{print $1}')
-				fi
-
-				printf "\t$KEYWORD_COLOR$keyword$NORMAL "
-				printf "$TASK_COLOR$task_title$NORMAL\r\n"
-				printf "\t\t$ATTRIB_COLOR"
-				[[ -n "$tag" ]] && printf "tag: $tag"
-				[[ -n "$date" ]] && printf "  due: $date"
-				[[ -n "$assignee" ]] && printf "  assignee: $assignee"
-				printf "$NORMAL\r\n"
-			done
-			echo ""
-		fi
+		process_file "$file"
 	done
+	echo ""
+}
+
+process_file() {
+	local file output
+	file="$1"
+	output=$(grep -E '^[A-Z]+: .+( #[^ ]+)?( @[^ ]+)?( >> [^ ]+)?$' "$file")
+	if [[ -n "$output" ]]; then
+		full_path=$(dirname "$file")
+		# Get host directory (the one holding the zettel)
+		z=$(basename "$full_path")
+		# Get the project name. That is 2 directories up from `zet_dir`
+		p=$(dirname "$full_path")
+		p=$(basename "$(dirname "$p")")
+		echo "$output" | while IFS= read -r line; do
+			process_line "$line"
+		done
+	fi
+}
+
+process_line() {
+	local line tag dt assignee title keyword
+	local PRJ_COLOR ACTIVE_COLOR COMPLETED_COLOR TASK_COLOR TAG_COLOR DATE_COLOR ASSIGNEE_COLOR NORMAL
+
+	line="$1"
+	keyword=${line%%:*}
+	# If keyword is not in the list of valid keywords, skip this entry
+	if [[ ! "${ACTIVE_KEYWORDS[*]}" =~ $keyword && ! "${COMPLETED_KEYWORDS[*]}" =~ $keyword ]]; then
+		exit
+	fi
+	title_atttribs=${line#*\: }
+	title=${title_atttribs%% #*}
+	title=${title%% @*}
+	title=${title%% >>*}
+
+	for word in $line; do
+		case $word in
+			\#*) tag=${word#\#} ;;
+			\@*) dt=${word#\@} ;;
+		esac
+	done
+	if [[ $line == *">>"* ]]; then
+		assignee=${line#*">>"}
+		assignee=$(echo "$assignee" | awk '{print $1}')
+	fi
+
+	PRJ_COLOR=$(tput setaf 11)
+	ACTIVE_COLOR=$(tput setaf 13)
+	COMPLETED_COLOR=$(tput setaf 10)
+	TASK_COLOR=$(tput setaf 15)
+	TAG_COLOR=$(tput setaf 0 ; tput setab 5)
+	DATE_COLOR=$(tput setaf 1 ; tput setab 15)
+	ASSIGNEE_COLOR=$(tput setaf 15 ; tput bold ; tput setab 4)
+	NORMAL=$(tput sgr0)
+
+	# Print the project name and the task
+	printf "%s%s%s" "$PRJ_COLOR" "$p" "$NORMAL"
+	# Print the zettel directory and the task
+	printf " %s%s%s\t" "$PRJ_COLOR" "$z" "$NORMAL"
+	if [[ "${ACTIVE_KEYWORDS[*]}" =~ $keyword ]]; then
+		printf " %s%s%s\t" "$ACTIVE_COLOR" "$keyword" "$NORMAL"
+	else
+		printf " %s%s%s\t" "$COMPLETED_COLOR" "$keyword" "$NORMAL"
+	fi
+	printf " %s%s%s\t" "$TASK_COLOR" "$title" "$NORMAL"
+	printf "\t\t"
+	[[ -n "$tag" ]] && printf " %s %s %s " "$TAG_COLOR" "$tag" "$NORMAL"
+	[[ -n "$dt" ]] && printf " %s %s %s " "$DATE_COLOR" "$dt" "$NORMAL"
+	[[ -n "$assignee" ]] && printf " %s %s %s" "$ASSIGNEE_COLOR" "$assignee" "$NORMAL"
+	printf "\n"
 }
 
 main "$@"
