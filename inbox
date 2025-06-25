@@ -1,7 +1,35 @@
 #!/bin/bash
 
-if [[ "$#" -gt 0 ]] ; then
-	tasksync add "$@" project:INBOX
-else
-	taskpull project:INBOX +PENDING
-fi
+#if [[ "$#" -gt 0 ]] ; then
+#	tasksync add "$@" project:INBOX
+#else
+#	taskpull project:INBOX +PENDING
+#fi
+
+source "$HOME/.gtdrc"
+
+main() {
+	check
+
+	if [[ "$#" == 0 ]]; then
+		"$EDITOR" "$KARYA_DIR/inbox.md"
+	else
+		echo "- $*" >> "$KARYA_DIR/inbox.md"
+		echo "Added '$*' to inbox"
+	fi
+}
+
+check() {
+	if [[ ! -f "$KARYA_DIR/inbox.md" ]]; then
+		read -rp "Inbox file not found in '$KARYA_DIR'. Create [Y/n]? " mk_inbox
+		if [[ "$mk_inbox" == "Y" ]]; then
+			echo "# INBOX" >> "$KARYA_DIR/inbox.md"
+			echo "" >> "$KARYA_DIR/inbox.md"
+		else
+			echo "Cannot continue...Exiting"
+			exit
+		fi
+	fi
+}
+
+main "$@"
