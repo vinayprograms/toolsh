@@ -15,7 +15,8 @@ main() {
 	# [[ ! -z "$COMP_LINE" ]] && _karya
 
 	if [[ "$#" == "0" ]]; then # No subcommands => create a new zettel
-		echo "Please use one of the subcommands - ?, ls, open, edit"
+		#echo "Please use one of the subcommands - ?, ls, open, edit"
+		karya ls | head -n -1 | fzf --no-sort --tac --ansi --preview-window=up:60%:wrap --bind "ctrl-l:reload(karya ls | head -n -1)" --bind 'enter:execute(note {1} edit {2})' --bind ctrl-k:up,ctrl-j:down #less -R ;;
 	else # subcommands
 		subcommand="$1"
 		shift
@@ -24,7 +25,7 @@ main() {
 #			\?)	shift 2; search "$@" | less --pattern="$@" -iR ;;
 
 			# `ls` or `list` - List all tasks grouped by project
-			ls|list) list | head -n -1 | fzf --no-sort --tac --ansi --preview-window=up:60%:wrap --bind 'enter:execute(note {1} edit {2})' --bind ctrl-k:up,ctrl-j:down,ctrl-d:preview-page-down,ctrl-u:preview-page-up,ctrl-h:up,ctrl-l:down ;; #less -R ;;
+			ls|list) list ;;
 
 			# `open` - Open the specific project to perform additional operations.
 #			o|open) open "$1" ;;
@@ -113,7 +114,7 @@ process_line() {
 	else
 		printf " %s%s%s\t" "$COMPLETED_COLOR" "$keyword" "$NORMAL"
 	fi
-	printf " %s%s%s\t" "$TASK_COLOR" "$title" "$NORMAL"
+	printf " %s%s%s " "$TASK_COLOR" "$title" "$NORMAL"
 	[[ -n "$tag" ]] && printf " %s %s %s " "$TAG_COLOR" "$tag" "$NORMAL"
 	[[ -n "$dt" ]] && printf " %s %s %s " "$DATE_COLOR" "$dt" "$NORMAL"
 	[[ -n "$assignee" ]] && printf " %s %s %s" "$ASSIGNEE_COLOR" "$assignee" "$NORMAL"
