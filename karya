@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # NOTE: This script requires KARYA_DIR variable to be set. This is typically done
-#       in ~/.gtdrc. If you don't use this, then please set this variable in 
+#       in ~/.gtdrc. If you don't use this, then please set this variable in
 #       ~/.bashrc or ~/.bash_profile to your zettelkasten directory.
 if [[ -z "$KARYA_DIR" ]]; then
   source "$HOME/.gtdrc"
@@ -9,54 +9,54 @@ fi
 
 ACTIVE_KEYWORDS=("TODO" "TASK" "NOTE" "REMINDER" "EVENT" "MEETING" "CALL" "EMAIL" "MESSAGE" "FOLLOWUP" "REVIEW" "CHECKIN" "CHECKOUT" "RESEARCH" "READING" "WRITING" "DRAFT" "EDITING" "FINALIZE" "SUBMIT" "PRESENTATION" "WAITING" "DEFERRED" "DELEGATED")
 COMPLETED_KEYWORDS=("ARCHIVED" "CANCELED" "DELETED" "DONE" "COMPLETED" "CLOSED")
+declare -A projects
 
 main() {
 	# Autocompletion
 	# [[ ! -z "$COMP_LINE" ]] && _karya
 
-	if [[ "$#" == "0" ]]; then # No subcommands => create a new zettel
-		#echo "Please use one of the subcommands - ?, ls, open, edit"
-		karya ls | head -n -1 | fzf --no-sort --tac --ansi --preview-window=up:60%:wrap --bind "ctrl-l:reload(karya ls | head -n -1)" --bind 'enter:execute(note {1} edit {2})' --bind ctrl-k:up,ctrl-j:down #less -R ;;
+	if [[ "$#" == "0" ]]; then # No subcommands => show only pending tasks
+		SHOW_PENDING="false" karya ls | sed '/^$/d' | fzf --no-sort --tac --ansi --preview-window=up:60%:wrap --bind "ctrl-u:reload(SHOW_PENDING='false' karya ls | sed '/^$/d')" --bind 'enter:execute(note {1} edit {2})' --bind ctrl-h:up,ctrl-l:down #less -R ;;
 	else # subcommands
 		subcommand="$1"
 		shift
 		case "$subcommand" in
-			# `?` - Search for specific string across all tasks
-#			\?)	shift 2; search "$@" | less --pattern="$@" -iR ;;
-
 			# `ls` or `list` - List all tasks grouped by project
-			ls|list) list ;;
+			ls|list) list "" ;;
 
-			# `open` - Open the specific project to perform additional operations.
-#			o|open) open "$1" ;;
+			# `projects` - List all project directories and pending task count
+			projects) summarize_projects ;;
 
-			# `e` or `edit` - Open markdown file in an editor
-#			e|edit) edit "$1" ;;
+			*) # default - user passed a project name
+			last_cmd="$1"
+			case "$last_cmd" in
+				ls|list) SHOW_PENDING="false" list "$subcommand" | sed '/^$/d' | fzf --no-sort --tac --ansi --preview-window=up:60%:wrap --bind "ctrl-u:reload(SHOW_PENDING='false' karya $subcommand | sed '/^$/d')" --bind 'enter:execute(note {1} edit {2})' --bind ctrl-h:up,ctrl-l:down ;;
 
-			# Catch all
-			*) ;;
+				*) SHOW_PENDING="false" list "$subcommand" | sed '/^$/d' ;;
+			esac
+			;;
 		esac
 	fi
 }
 
 list() {
-	find "$PRJDIR" -path "$PRJDIR/*/notes/[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]/README.md" -type f | while read -r file; do
-	#find "$KARYA_DIR" -type f -name "*.md" -o -name "*.txt" | while read -r file; do
+	local prj
+	[[ "$1" == "" ]] && prj="*" || prj="$1"
+	find "$KARYA_DIR" -path "$KARYA_DIR/$prj/notes/[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]/README.md" -type f | while read -r file; do
 		process_file "$file"
 	done
 	echo ""
 }
+
 
 process_file() {
 	local file output
 	file="$1"
 	output=$(grep -E '^[A-Z]+: .+( #[^ ]+)?( @[^ ]+)?( >> [^ ]+)?$' "$file")
 	if [[ -n "$output" ]]; then
-		local full_path z filename prj
+		local full_path z prj
 
 		full_path=$(dirname "$file")
-		# Get host directory (the one holding the zettel)
-		filename="${file##*/}"
 		# Get the project name. That is 2 directories up from `zet_dir`
 		prj=$(dirname "$full_path")
 		prj=$(basename "$(dirname "$prj")")
@@ -78,7 +78,11 @@ process_line() {
 	keyword=${line%%:*}
 	# If keyword is not in the list of valid keywords, skip this entry
 	if [[ ! "${ACTIVE_KEYWORDS[*]}" =~ $keyword && ! "${COMPLETED_KEYWORDS[*]}" =~ $keyword ]]; then
-		exit
+		return
+	fi
+	# Don't show completed tasks
+	if [[ "$SHOW_PENDING" == "false" && "${COMPLETED_KEYWORDS[*]}" =~ $keyword ]]; then
+		return
 	fi
 	title_atttribs=${line#*\: }
 	title=${title_atttribs%% #*}
@@ -108,17 +112,46 @@ process_line() {
 	# Print the project name and the task
 	printf "%s%s%s" "$PRJ_COLOR" "$project" "$NORMAL"
 	# Print the zettel directory and the task
-	printf " %s%s%s\t" "$PRJ_COLOR" "$zettel" "$NORMAL"
+	printf " %s%s%s" "$PRJ_COLOR" "$zettel" "$NORMAL"
 	if [[ "${ACTIVE_KEYWORDS[*]}" =~ $keyword ]]; then
-		printf " %s%s%s\t" "$ACTIVE_COLOR" "$keyword" "$NORMAL"
+		printf " %s%-12s%s" "$ACTIVE_COLOR" "$keyword" "$NORMAL"
 	else
-		printf " %s%s%s\t" "$COMPLETED_COLOR" "$keyword" "$NORMAL"
+		printf " %s%-12s%s" "$COMPLETED_COLOR" "$keyword" "$NORMAL"
 	fi
 	printf " %s%s%s " "$TASK_COLOR" "$title" "$NORMAL"
 	[[ -n "$tag" ]] && printf " %s %s %s " "$TAG_COLOR" "$tag" "$NORMAL"
 	[[ -n "$dt" ]] && printf " %s %s %s " "$DATE_COLOR" "$dt" "$NORMAL"
 	[[ -n "$assignee" ]] && printf " %s %s %s" "$ASSIGNEE_COLOR" "$assignee" "$NORMAL"
-	printf "\r\n"
+	printf "\n"
+}
+
+summarize_projects() {
+	local maxlen
+	maxlen=0
+	while read -r file; do
+		local prj count
+		# Get the project name: 2 directories up from zettel's directory
+		prj=$(basename "$(dirname "$(dirname  "$(dirname "$file")")")")
+		[[ ${#prj} -gt $maxlen ]] && maxlen=${#prj}
+		count=$(count_tasks "$file")
+		projects["$prj"]=$(( ${projects["$prj"]:-0} + "$count" ))
+	done < <(find "$KARYA_DIR" -path "$KARYA_DIR/*/notes/[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]/README.md" -type f)
+	show_projects "$maxlen"
+}
+
+count_tasks() {
+	local keywords
+	keywords="$(IFS='|'; echo "${ACTIVE_KEYWORDS[*]}")"
+	grep -c -E "^(${keywords}): .+( #[^ ]+)?( @[^ ]+)?( >> [^ ]+)?$" "$1"
+}
+
+show_projects() {
+	tput smul && printf "\n%-${1}s" "Project" && tput rmul
+	printf " " && tput smul && printf "Tasks\n" && tput rmul
+	for key in $(printf "%s\n" "${!projects[@]}" | sort); do
+		printf "%-${maxlen}s %5s\n" "$key" "${projects[$key]}"
+	done
+	echo ""
 }
 
 main "$@"

@@ -30,7 +30,7 @@ main() {
 	cd "$ZETDIR" || exit 1
 	[[ -d "$ZETDIR/.git" && -n $(cd "$ZETDIR" && git remote) ]] && git pull 1>/dev/null
 	if [[ "$#" == "0" ]]; then # No subcommands => interactive
-		listzettels | sed 's/\r$//g' | fzf --no-sort --tac --ansi --preview-window=up:60%:wrap --preview 'batcmd --theme=gruvbox-dark --style=changes --color=always {1}/README.md' --bind 'enter:execute(zet e {1})' --bind ctrl-k:preview-up,ctrl-j:preview-down,ctrl-d:preview-page-down,ctrl-u:preview-page-up,ctrl-h:up,ctrl-l:down
+		listzettels "" | sed 's/\r$//g' | fzf --no-sort --tac --ansi --preview-window=up:60%:wrap --preview 'batcmd --theme=gruvbox-dark --style=changes --color=always {1}/README.md' --bind 'enter:execute(zet e {1})' --bind ctrl-k:preview-up,ctrl-j:preview-down,ctrl-d:preview-page-down,ctrl-u:preview-page-up,ctrl-h:up,ctrl-l:down
 	else # subcommands
 		subcommand="$1"
 		shift
@@ -62,14 +62,14 @@ main() {
 			# edit.
 			e|edit)
 				if [[ -z "$1" ]]; then
-					listzettels | sed 's/\r$//g' | fzf --no-sort --tac --ansi --preview-window=up:60%:wrap --preview 'batcmd --theme=gruvbox-dark --style=changes --color=always {1}/README.md' --bind 'enter:execute(zet e {1})' --bind ctrl-k:preview-up,ctrl-j:preview-down,ctrl-d:preview-page-down,ctrl-u:preview-page-up,ctrl-h:up,ctrl-l:down
+					listzettels "" | sed 's/\r$//g' | fzf --no-sort --tac --ansi --preview-window=up:60%:wrap --preview 'batcmd --theme=gruvbox-dark --style=changes --color=always {1}/README.md' --bind 'enter:execute(zet e {1})' --bind ctrl-k:preview-up,ctrl-j:preview-down,ctrl-d:preview-page-down,ctrl-u:preview-page-up,ctrl-h:up,ctrl-l:down
 				else
 					editzettel "$1"
 				fi
 			;;
 
 			# `ls` or `list` - List all zettels. Shows the zettel ID and its title.
-			ls|list) listzettels -c | less -R ;;
+			ls|list) listzettels "" ;;
 
 			# `show` - Dump the entire zettel's content to STDOUT
 			show) printzettel "$1" ;;
@@ -213,7 +213,7 @@ editzettel() {
 listzettels() {
 	cd "$ZETDIR" || exit 1
 	if [[ "$(find "$ZETDIR"/* -maxdepth 0 -type d | wc -l)" == 0 ]]; then
-		exit -1
+		exit
 	fi
 
 	local MAGENTA NORMAL

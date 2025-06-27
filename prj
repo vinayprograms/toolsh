@@ -22,23 +22,21 @@ main() {
 	PROJECT="$1"
 
 	if [[ "$PROJECT" == "none" || "$PROJECT" == "" ]] ; then
-		echo "Showing tasks that don't have a project..."
-		PROJECT=""
+		echo "No project name provided."
+		exit
 	fi
 
 	shift
 	if [[ "$#" == "0" ]] ; then
 		taskpull &>/dev/null
 		echo ""; echo -e "${BOLD}    TASKS    ${NC}";
-		task list project:"$PROJECT" -rnr
-		echo ""; echo -e "${BOLD}   WAITING   ${NC}"
-		task waiting project:"$PROJECT" -rnr
-		echo ""; echo -e "${BOLD}   SOMEDAY   ${NC}"
-		task list project:"$PROJECT" +someday -rnr
+		#task list project:"$PROJECT" -rnr
+		karya "$PROJECT"
 		if [[ "$PROJECT" != "" ]]; then
 			echo ""; echo -e "${BOLD}   NOTES   ${NC}"
 			note_count=$(note "$PROJECT" count)
-			echo -e "$note_count notes. Use 'note $PROJECT ls' to list notes"
+			printf "%s notes\n" "$note_count"
+			note "$PROJECT" ls
 		fi
 	else
 		SUBCMD="$1"
@@ -70,9 +68,16 @@ main() {
 
 list_projects() {
 	task_data=$(get_projects_and_tasks)
-	echo -e "${BOLD}      PROJECT       │ TASKS │ NOTES ${NC}"
+	local maxlen=0
 	while IFS= read -r line; do
-		project_name=$(echo "$line" | sed -E 's/\s*[0-9]+$//')
+		project_name=$(echo "$line" | sed -E 's/\s*[0-9]+$//' | tr -d '[:space:]')
+		[[ ${#project_name} -gt ${maxlen} ]] && maxlen=${#project_name}
+	done <<< "$task_data"
+	echo ""
+	printf "${BOLD}%-${maxlen}s  TASKS  NOTES ${NC}\n" "PROJECT"
+	local prj_count=0 total_tasks=0 total_notes=0
+	while IFS= read -r line; do
+		project_name=$(echo "$line" | sed -E 's/\s*[0-9]+$//' | tr -d '[:space:]')
 		p_name=$(echo "$project_name" | xargs)
 		task_count=$(echo "$line" | awk '{print $NF}')
 		if [[ "$p_name" != "(none)" ]]; then
@@ -80,16 +85,19 @@ list_projects() {
 		else
 			zettel_count="0"
 		fi
-
-		printf "%-20s│ %5s │%5s\n" "$project_name" "$task_count" "$zettel_count"
+		printf "%-${maxlen}s  %5s %5s\n" "$project_name" "$task_count" "$zettel_count"
+		prj_count=$(( prj_count + 1 ))
+		total_tasks=$(( total_tasks + task_count ))
+		total_notes=$(( total_notes + zettel_count ))
 	done <<< "$task_data"
+	printf "\n%s Projects, %s tasks, %s notes\n\n" "$prj_count" "$total_tasks" "$total_notes"
 }
 
 get_projects_and_tasks() {
-	list_data=$(taskpull status:pending -rnr projects)
+	list_data=$(karya projects)
 	list_data=$(echo "$list_data" | tail -n +4)
 	count=$(echo "$list_data" | wc -l)
-	echo "$list_data" | head -n "$(($count - 2))"
+	echo "$list_data" | head -n "$(( count - 2 ))"
 }
 
 does_prj_contain_task() {
