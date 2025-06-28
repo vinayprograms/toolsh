@@ -8,8 +8,7 @@ source "$HOME/.gtdrc"
 
 main() {
 
-	if [[ "$1" == "list" ]] ; then
-		#taskpull status:pending -rnr projects
+	if [[ "$1" == "list" || "$1" == "ls" ]] ; then
 		list_projects
 		exit
 	fi
@@ -31,43 +30,18 @@ main() {
 		taskpull &>/dev/null
 		echo ""; echo -e "${BOLD}    TASKS    ${NC}";
 		#task list project:"$PROJECT" -rnr
-		karya "$PROJECT"
+		todo "$PROJECT"
 		if [[ "$PROJECT" != "" ]]; then
 			echo ""; echo -e "${BOLD}   NOTES   ${NC}"
 			note_count=$(note "$PROJECT" count)
 			printf "%s notes\n" "$note_count"
 			note "$PROJECT" ls
 		fi
-	else
-		SUBCMD="$1"
-    shift
-
-		case "$SUBCMD" in
-
-			tickle)
-				TASKID="$1"; shift
-				CONTAINS=$(does_prj_contain_task "$PROJECT" "$TASKID")
-				if [[ "$CONTAINS" == "0" ]] ; then
-					echo "Task-ID $TASKID not found in project \"$PROJECT\""
-					exit
-				fi
-				if [[ "$#" == "0" ]] ; then
-					tasksync "$TASKID" modify wait:monday
-				else
-					tasksync "$TASKID" modify wait:"$*"
-				fi
-				;;
-
-			add)
-				TASK="$*"
-				tasksync "$SUBCMD" "\"$TASK\"" project:"$PROJECT"
-				;;
-		esac
 	fi
 }
 
 list_projects() {
-	task_data=$(get_projects_and_tasks)
+	task_data=$(todo projlist)
 	local maxlen=0
 	while IFS= read -r line; do
 		project_name=$(echo "$line" | sed -E 's/\s*[0-9]+$//' | tr -d '[:space:]')
@@ -80,38 +54,13 @@ list_projects() {
 		project_name=$(echo "$line" | sed -E 's/\s*[0-9]+$//' | tr -d '[:space:]')
 		p_name=$(echo "$project_name" | xargs)
 		task_count=$(echo "$line" | awk '{print $NF}')
-		if [[ "$p_name" != "(none)" ]]; then
-			zettel_count=$(note "$p_name" count)
-		else
-			zettel_count="0"
-		fi
+		zettel_count=$(note "$p_name" count)
 		printf "%-${maxlen}s  %5s %5s\n" "$project_name" "$task_count" "$zettel_count"
 		prj_count=$(( prj_count + 1 ))
 		total_tasks=$(( total_tasks + task_count ))
 		total_notes=$(( total_notes + zettel_count ))
 	done <<< "$task_data"
 	printf "\n%s Projects, %s tasks, %s notes\n\n" "$prj_count" "$total_tasks" "$total_notes"
-}
-
-get_projects_and_tasks() {
-	list_data=$(karya projects)
-	list_data=$(echo "$list_data" | tail -n +4)
-	count=$(echo "$list_data" | wc -l)
-	echo "$list_data" | head -n "$(( count - 2 ))"
-}
-
-does_prj_contain_task() {
-	taskpull &>/dev/null
-	FOUND=$(task list project:"$1" | grep "$2")
-	if [[ "$FOUND" == "" ]] ; then
-		FOUND=$(task waiting project:"$1" | grep "$2")
-	fi
-
-	if [[ "$FOUND" == "" ]] ;  then
-		echo 0
-	else
-		echo 1
-	fi
 }
 
 main "$@"
