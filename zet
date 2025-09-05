@@ -83,12 +83,7 @@ main() {
 				editzettel "$zettel"
 				;;
 			toc)
-				update_readme
-				if [ -d "$ZETDIR/.git" ]; then
-					git add README.md
-					git commit -m "Updated ToC"
-					[[ -n "$(git remote)" ]] && git push || echo "No remotes for this repository"
-				fi
+				"$EDITOR" README.md
 				;;
 
 			# Catch all
@@ -118,12 +113,12 @@ update_readme() {
 		directory="${directory:0:14}"
 		title=$(head -n 1 ./"$directory"/README.md)
 		title="${title:2}"; title="${title%$'\r'}  "
-		body+="| [$directory](./$directory/README.md) |  $title |"$'\n'
+		body+="* [$directory](./$directory/README.md) - $title"$'\n'
 	done < <(ls -d */)
 
 	echo "$heading" > README.md
-	echo "| ID | Zettel |" >> README.md
-	echo "|--|--|" >> README.md
+	#echo "| ID | Zettel |" >> README.md
+	#echo "|--|--|" >> README.md
 	echo "$body" >> README.md
 }
 
