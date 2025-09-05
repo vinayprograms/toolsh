@@ -106,7 +106,7 @@ preflight-checks() {
 }
 
 update_readme() {
-	heading="# My Zettelkasten"
+	heading="# Index"
 
 	body=""
 	while read -r directory; do
