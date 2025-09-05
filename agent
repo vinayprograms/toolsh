@@ -1,0 +1,58 @@
+#!/bin/sh
+
+# Extract CLI parameters - '-r' for role, '-c' for context, '-g' for goal.
+# Each of them should point to a file containing the respective content.
+# If one or more are not provided, use `gum` to prompt the user for input
+while getopts "r:c:g:" opt; do
+  case $opt in
+    r)
+      if [ -f "$OPTARG" ]; then
+        ROLE="$(cat "$OPTARG")"
+      else
+        ROLE="$OPTARG"
+      fi
+      ;;
+    c)
+      if [ -f "$OPTARG" ]; then
+        CONTEXT="$(cat "$OPTARG")"
+      else
+        CONTEXT="$OPTARG"
+      fi
+      ;;
+    g)
+      if [ -f "$OPTARG" ]; then
+        GOAL="$(cat "$OPTARG")"
+      else
+        GOAL="$OPTARG"
+      fi
+      ;;
+    *) echo "Invalid option: -$OPTARG" >&2 ;;
+  esac
+done
+# Shift the processed options away
+shift $((OPTIND -1))
+# If any of ROLE, CONTEXT, GOAL are empty, prompt the user for input
+if [ -z "$ROLE" ]; then
+  ROLE="$(gum input --placeholder "AI's Role")"
+fi
+if [ -z "$CONTEXT" ]; then
+  CONTEXT="$(gum write --placeholder "Initial Context")"
+fi
+if [ -z "$GOAL" ]; then
+  GOAL="$(gum write --placeholder "Goal")"
+fi
+
+
+TOKEN="$(head -1 "$HOME/.config/gpt/token")"
+ gum log --time="ansic" --level="info" "Analyzing goal and building a list of tasks"
+LIST=$(OPENAI_API_KEY="$TOKEN" mods --no-cache --role "$ROLE" "CONTEXT: $CONTEXT\n\nGOAL: $GOAL\n\nTASK: As first step, create a detailed checklist of steps you need to work on to achieve this goal. Each item will be given to a coding AI agent who will take care of implementing it. So make sure your level of abstraction matches the one required by the coding agent. Each checklist item must be on a single line. Don't break the task across lines because we are going to process one task at a time.")
+ gum log --time="ansic" --level="info" "Checklist created. Starting work."
+ gum format "# Checklist" "$LIST"
+# Process each item in the list
+echo "$LIST" | while IFS= read -r ITEM; do
+   gum log --time="ansic" --level="debug" "WORKING ON \"$ITEM\""
+   PROMPT="CONTEXT\n-------\n$CONTEXT\n\nGOAL\n----\n$GOAL\n\nWORK ITEM\n---------\n$ITEM\n\nINSTRUCTIONS\n------------\nJust focus on the task given to you in the WORK ITEM section. Don't do anything outside of that. Don't stop until you are done with the work item. You can execute the work item in multiple steps if required."
+   crush run "$PROMPT" </dev/null
+   gum log --time="ansic" --level="debug" "Work completed. Moving to the next item."
+   continue
+done
