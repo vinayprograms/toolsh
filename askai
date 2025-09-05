@@ -1,0 +1,3 @@
+#!/bin/sh
+
+OPENAI_API_KEY=$(head -1 "$HOME/.config/gpt/token") mods --no-cache --role "$(gum input --placeholder 'AI role')" "CONTEXT: $(gum write --placeholder "Context")\n\n TASK:$(gum write --placeholder "Task")"
